@@ -51,7 +51,6 @@ ddb_gtkui_widget_t *volumescale_create(){
 	w->base.init    = volumescale_init;
 	w->base.message = volumescale_message;
 	w->volume_change_callback_id = 0;
-	gtk_container_add(GTK_CONTAINER(w->base.widget),w->base.widget);
 
 	g_signal_connect(w->base.widget,"value-changed",G_CALLBACK(on_volumescale_change),w);
 	gtk_scale_set_draw_value(GTK_SCALE(w->base.widget),false);

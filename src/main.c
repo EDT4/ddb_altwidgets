@@ -9,16 +9,18 @@ ddb_gtkui_t *gtkui_plugin;
 ddb_gtkui_widget_t *actionbuttons_create();
 ddb_gtkui_widget_t *volumescale_create();
 ddb_gtkui_widget_t *dspcombo_create();
-//ddb_gtkui_widget_t *iconbutton_create();
+ddb_gtkui_widget_t *menutoggle_create();
 
 static int altwidgets_connect(){
 	gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
 	if(!gtkui_plugin) return -1;
 
-	gtkui_plugin->w_reg_widget("Action Buttons",0,actionbuttons_create,"actionbuttons",NULL);
-	gtkui_plugin->w_reg_widget("Volume Scale"  ,0,volumescale_create  ,"volumescale"  ,NULL);
-	gtkui_plugin->w_reg_widget("DSP Combo"     ,0,dspcombo_create     ,"dspcombo"     ,NULL);
-	//gtkui_plugin->w_reg_widget("Button (Icon)" ,0,iconbutton_create   ,"iconbutton"   ,NULL);
+	gtkui_plugin->w_reg_widget("Action Buttons"    ,0,actionbuttons_create,"actionbuttons",NULL);
+	gtkui_plugin->w_reg_widget("Volume Scale"      ,0,volumescale_create  ,"volumescale"  ,NULL);
+	gtkui_plugin->w_reg_widget("DSP Combo"         ,0,dspcombo_create     ,"dspcombo"     ,NULL);
+	gtkui_plugin->w_reg_widget("Menu Toggle Button",0,menutoggle_create   ,"menutoggle"   ,NULL);
+	//TODO: Custom action button
+	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself. The view should be a container which either hides or unloads (saves layout as json) and then shows/loads. Multiple views should be able to connect to a single view controller.
 
 	return 0;
 }
@@ -28,6 +30,7 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("actionbuttons");
 		gtkui_plugin->w_unreg_widget("volumescale");
 		gtkui_plugin->w_unreg_widget("dspcombo");
+		gtkui_plugin->w_unreg_widget("menutoggle");
 		gtkui_plugin = NULL;
 	}
 	return 0;
@@ -44,10 +47,11 @@ static DB_misc_t plugin ={
 	.plugin.descr =
 		"Alternative small widgets.\n"
 		"\n"
-		"List of the widgets provided by this plugin:\n"
-		"- Action buttons: Playback buttons and more with tooltips and state.\n"
+		"List of widgets provided:\n"
+		"- Action Buttons: Playback buttons and more with tooltips and state.\n"
 		"- Volume Scale: Volume selector by a scale widget.\n"
 		"- DSP Combo: Selecting a saved DSP preset.\n"
+		"- Menu Toggle Button: Toggles the visibility of the menu bar.\n"
 	,
 	.plugin.copyright =
 		"MIT License\n"
