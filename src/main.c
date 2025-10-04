@@ -15,10 +15,10 @@ static int altwidgets_connect(){
 	gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
 	if(!gtkui_plugin) return -1;
 
-	gtkui_plugin->w_reg_widget("Action Buttons"    ,0,actionbuttons_create,"actionbuttons",NULL);
-	gtkui_plugin->w_reg_widget("Volume Scale"      ,0,volumescale_create  ,"volumescale"  ,NULL);
-	gtkui_plugin->w_reg_widget("DSP Combo"         ,0,dspcombo_create     ,"dspcombo"     ,NULL);
-	gtkui_plugin->w_reg_widget("Menu Toggle Button",0,menutoggle_create   ,"menutoggle"   ,NULL);
+	gtkui_plugin->w_reg_widget("Action Buttons"    ,0                           ,actionbuttons_create,"actionbuttons",NULL);
+	gtkui_plugin->w_reg_widget("Volume Scale"      ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
+	gtkui_plugin->w_reg_widget("DSP Combo"         ,0                           ,dspcombo_create     ,"dspcombo"     ,NULL);
+	gtkui_plugin->w_reg_widget("Menu Toggle Button",0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
 	//TODO: Custom action button
 	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself. The view should be a container which either hides or unloads (saves layout as json) and then shows/loads. Multiple views should be able to connect to a single view controller.
 

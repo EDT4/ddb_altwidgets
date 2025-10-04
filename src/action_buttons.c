@@ -65,19 +65,22 @@ static void actionbuttons_init(ddb_gtkui_widget_t *w){
 	struct actionbuttons *data = (struct actionbuttons*)w;
 
 	//Initial state.
-	switch(deadbeef->get_output()->state()){
-		case DDB_PLAYBACK_STATE_STOPPED:
-			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_stop,data,actionbuttons_on_callback_end);
-			break;
-		case DDB_PLAYBACK_STATE_PLAYING:
-			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_play,data,actionbuttons_on_callback_end);
-			break;
-		case DDB_PLAYBACK_STATE_PAUSED:
-			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_pause,data,actionbuttons_on_callback_end);
-			break;
+	struct DB_output_s* output = deadbeef->get_output();
+	if(output){
+		switch(output->state()){
+			case DDB_PLAYBACK_STATE_STOPPED:
+				if(data->callback_id != 0) g_source_remove(data->callback_id);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_stop,data,actionbuttons_on_callback_end);
+				break;
+			case DDB_PLAYBACK_STATE_PLAYING:
+				if(data->callback_id != 0) g_source_remove(data->callback_id);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_play,data,actionbuttons_on_callback_end);
+				break;
+			case DDB_PLAYBACK_STATE_PAUSED:
+				if(data->callback_id != 0) g_source_remove(data->callback_id);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_pause,data,actionbuttons_on_callback_end);
+				break;
+		}
 	}
 }
 
