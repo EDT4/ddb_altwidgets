@@ -39,6 +39,7 @@ ddb_gtkui_widget_t *ratingtoggle_create(){
 
 	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(ratingtoggle_on_toggled),w);
     gtk_button_set_image(GTK_BUTTON(w->base.widget),gtk_image_new_from_icon_name("semi-starred-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR));
+	gtk_widget_set_tooltip_text(w->base.widget,"Rate track");
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
 

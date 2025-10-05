@@ -39,21 +39,31 @@ static void on_volumescale_change(GtkRange* self,__attribute__((unused)) gpointe
 static gboolean volumescale_change(gpointer user_data){
 	struct volumescale *data = (struct volumescale*)user_data;
 	const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
-	g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)on_volumescale_change,data);
+	const double amp = deadbeef->volume_get_amp();
+	const double db  = deadbeef->volume_get_db();
 	double value;
 	switch(data->scaling){
 		case SCALING_LINEAR:
-			value = deadbeef->volume_get_amp();
+			value = amp;
 			break;
 		case SCALING_CUBIC:
-			value = cbrt(deadbeef->volume_get_amp());
+			value = cbrt(amp);
 			break;
 		case SCALING_DECIBEL:
-			value = 1.0 - deadbeef->volume_get_db() / deadbeef->volume_get_min_db();
+			value = 1.0 - db / deadbeef->volume_get_min_db();
 			break;
 	}
+
+	{
+		char buffer[40];
+		snprintf(buffer,sizeof(buffer),"%f%% (%f dB)",amp*100.0,db);
+		gtk_widget_set_tooltip_text(data->base.widget,buffer);
+	}
+
+	g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)on_volumescale_change,data);
 	gtk_range_set_value(GTK_RANGE(data->base.widget),value);
 	g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)on_volumescale_change,data);
+
 	return G_SOURCE_REMOVE;
 }
 static void volumescale_change_on_callback_end(void *user_data){

@@ -4,9 +4,11 @@
 #include <stdbool.h>
 #include "deadbeef_util.h"
 #include "gtk2.h"
+#include "main.h"
 
 extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;
+extern struct altwidgets altwidgets_data;
 
 enum{
 	BUTTON_PREV,
@@ -23,7 +25,6 @@ struct actionbuttons{
 	ddb_gtkui_widget_t base;
 	GtkWidget *buttons[BUTTON_COUNT];
 	guint callback_id;
-	GHashTable *db_action_map;
 };
 
 #define PLAY_IMAGE_NEW  gtk_image_new_from_icon_name("media-playback-start-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR)
@@ -85,12 +86,6 @@ static void actionbuttons_init(ddb_gtkui_widget_t *w){
 	}
 }
 
-static void actionbuttons_destroy(ddb_gtkui_widget_t *w){
-	struct actionbuttons *data = (struct actionbuttons*)w;
-	g_hash_table_remove_all(data->db_action_map);
-	g_hash_table_unref(data->db_action_map);
-}
-
 static int actionbuttons_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,uint32_t p1,__attribute__((unused)) uint32_t p2){
 	struct actionbuttons *data = (struct actionbuttons*)w;
 	//TODO: MAybe instead of sentivitiy, set enabled on actions.
@@ -115,25 +110,35 @@ static int actionbuttons_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attr
 	#define BUTTON_ACTION_INIT(button,name) \
 		gtk_actionable_set_action_name(GTK_ACTIONABLE(button),"db." name);\
 		{\
-			DB_plugin_action_t *db_action = g_hash_table_lookup(w->db_action_map,name);\
+			DB_plugin_action_t *db_action = g_hash_table_lookup(altwidgets_data.db_action_map,name);\
 			if(db_action) gtk_widget_set_tooltip_text(button,db_action->title);\
 		}
 #else
-	//TODO
-	#define BUTTON_ACTION_INIT(button,name)
+	static void on_actionbutton_clicked(GtkToggleButton *button,__attribute__((unused)) gpointer user_data){
+		DB_plugin_action_t * action = g_object_get_data(G_OBJECT(button),"action");
+		if(action) action_call(action,DDB_ACTION_CTX_MAIN);
+	}
+
+	#define BUTTON_ACTION_INIT(button,name) \
+		{\
+			DB_plugin_action_t *db_action = g_hash_table_lookup(altwidgets_data.db_action_map,name);\
+			if(db_action){\
+				gtk_widget_set_tooltip_text(button,db_action->title);\
+				g_object_set_data(G_OBJECT(button),"action",db_action);\
+				g_signal_connect(G_OBJECT(button),"clicked",G_CALLBACK(on_actionbutton_clicked),NULL);\
+			}\
+		}
 #endif
 
 ddb_gtkui_widget_t *actionbuttons_create(){
 	struct actionbuttons *w = calloc(1,sizeof(struct actionbuttons));
 	w->base.widget = gtk_hbutton_box_new();
 	w->base.init    = actionbuttons_init;
-	w->base.destroy = actionbuttons_destroy;
 	w->base.message = actionbuttons_message;
 	w->callback_id = 0;
-	w->db_action_map = g_hash_table_new_full(g_str_hash,g_str_equal,free,NULL); //TODO: Should this be in create or init (here)?
 
 	#if GTK_CHECK_VERSION(3,0,0)
-	gtk_widget_insert_action_group(GTK_WIDGET(w->base.widget),"db",deadbeef_action_group(w->db_action_map));
+	gtk_widget_insert_action_group(GTK_WIDGET(w->base.widget),"db",altwidgets_data.db_action_group);
 	#endif
 
 		#define button w->buttons[BUTTON_PREV]

@@ -2,9 +2,8 @@
 #include <deadbeef/deadbeef.h>
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
-
-DB_functions_t *deadbeef;
-ddb_gtkui_t *gtkui_plugin;
+#include "deadbeef_util.h"
+#include "main.h"
 
 ddb_gtkui_widget_t *actionbuttons_create();
 ddb_gtkui_widget_t *volumescale_create();
@@ -15,9 +14,47 @@ ddb_gtkui_widget_t *menutoggle_create();
 ddb_gtkui_widget_t *ratingtoggle_create();
 #endif
 
+DB_functions_t *deadbeef;
+ddb_gtkui_t *gtkui_plugin;
+struct altwidgets altwidgets_data;
+
+static int altwidgets_start(){
+	altwidgets_data.db_action_map = g_hash_table_new_full(g_str_hash,g_str_equal,free,NULL);
+	altwidgets_data.db_action_group = NULL;
+	return 0;
+}
+
+static int altwidgets_stop(){
+	if(altwidgets_data.db_action_map){
+		g_hash_table_remove_all(altwidgets_data.db_action_map);
+		g_hash_table_unref(altwidgets_data.db_action_map);
+	}
+	//free(altwidgets_data.db_action_group); //TODO: How to free?
+	return 0;
+}
+
+static void on_action_activate(__attribute__((unused)) GSimpleAction *act,GVariant *parameter,gpointer user_data){
+	action_call((DB_plugin_action_t*)user_data,parameter && g_variant_is_of_type(parameter,G_VARIANT_TYPE_INT32)? g_variant_get_int32(parameter) : DDB_ACTION_CTX_MAIN);
+}
 static int altwidgets_connect(){
 	gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
 	if(!gtkui_plugin) return -1;
+
+	//Prepare action map and action group
+	//TODO: Is this too early? Have all the plugins registered their actions at this point?
+	GSimpleActionGroup *group = g_simple_action_group_new();
+	for(DB_plugin_t **plugin = deadbeef->plug_get_list() ; *plugin ; plugin++){
+		if(!(*plugin)->get_actions) continue;
+		for(DB_plugin_action_t *db_action = (*plugin)->get_actions(NULL) ; db_action; db_action = db_action->next){
+			if(db_action->callback2 && db_action->flags & (DB_ACTION_COMMON | DB_ACTION_MULTIPLE_TRACKS)){
+				GSimpleAction *action = g_simple_action_new(db_action->name,(db_action->flags & DB_ACTION_MULTIPLE_TRACKS) ? G_VARIANT_TYPE_INT32 : NULL);
+				g_hash_table_replace(altwidgets_data.db_action_map,strdup(db_action->name),db_action);
+				g_signal_connect(action,"activate",G_CALLBACK(on_action_activate),db_action);
+				g_action_map_add_action(G_ACTION_MAP(group),G_ACTION(action));
+			}
+		}
+	}
+	altwidgets_data.db_action_group = G_ACTION_GROUP(group);
 
 	gtkui_plugin->w_reg_widget("Action Buttons"    ,0                           ,actionbuttons_create,"actionbuttons",NULL);
 	gtkui_plugin->w_reg_widget("Volume Scale"      ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
@@ -28,7 +65,15 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Rating Toggle"     ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
 	#endif
 	//TODO: Custom action button
-	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself. The view should be a container which either hides or unloads (saves layout as json) and then shows/loads. Multiple views should be able to connect to a single view controller.
+
+	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself.
+	//The view should be a container which either hides or unloads (saves layout as json) and then shows/loads.
+	//Multiple views should be able to connect to a single view controller.
+	//The view selector cannot have a pointer to a widget in case it is destroyed (no ref counting for widgets?), so store the widget as a "path" from a root widget. Example: root -> child 0: hbox -> child 3: vbox -> child 2: view container.
+	//The view selector and container is paired by the container having an "id". The selector searches from a root widget for a view container which has the specified "id". The "id" should be an user inputted string in both the selector and the container.
+	//It would therefore be beneficial in this approach to extend the GTKUI API, making it possible to register multiple root widgets, meaning returning a NULL-terminated array in w_get_rootwidget for example.
+	//An alternative would be to use the pointer approach and extend the GTKUI API to be able to listen to widget creations/removals.
+	//If it is not possible to extend the GTKUI API, a plugin could provide API extensions instead. For example a plugin that provides a list of root widgets which every plugin can register into.
 
 	return 0;
 }
@@ -39,7 +84,11 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("volumescale");
 		gtkui_plugin->w_unreg_widget("dspcombo");
 		gtkui_plugin->w_unreg_widget("menutoggle");
+
+		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("ratingtoggle");
+		#endif
+
 		gtkui_plugin = NULL;
 	}
 	return 0;
@@ -51,7 +100,11 @@ static DB_misc_t plugin ={
 	.plugin.version_major = 1,
 	.plugin.version_minor = 0,
 	.plugin.type = DB_PLUGIN_MISC,
+	#if GTK_CHECK_VERSION(3,0,0)
 	.plugin.id = "altwidgets-gtk3",
+	#else
+	.plugin.id = "altwidgets-gtk2",
+	#endif
 	.plugin.name = "Alternative Widgets",
 	.plugin.descr =
 		"Alternative small widgets.\n"
@@ -86,12 +139,20 @@ static DB_misc_t plugin ={
 		"SOFTWARE.\n"
 	,
 	.plugin.website = "https://github.org/EDT4/ddb_altwidgets",
-	.plugin.connect = altwidgets_connect,
+	.plugin.connect    = altwidgets_connect,
 	.plugin.disconnect = altwidgets_disconnect,
+	.plugin.start      = altwidgets_start,
+	.plugin.stop       = altwidgets_stop,
 };
 
 __attribute__((visibility("default")))
-DB_plugin_t * altwidgets_gtk3_load(DB_functions_t *api){
+DB_plugin_t *
+#if GTK_CHECK_VERSION(3,0,0)
+altwidgets_gtk3_load
+#else
+altwidgets_gtk2_load
+#endif
+(DB_functions_t *api){
 	deadbeef = api;
 	return DB_PLUGIN(&plugin);
 }
