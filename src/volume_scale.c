@@ -3,6 +3,7 @@
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
 #include <math.h>
+#include "gtk2.h"
 
 extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;
@@ -134,7 +135,7 @@ static void volumescale_free_serialized_keyvalues(__attribute__((unused)) ddb_gt
 
 ddb_gtkui_widget_t *volumescale_create(){
 	struct volumescale *w = calloc(1,sizeof(struct volumescale));
-	w->base.widget = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0,1.0,0.05);
+	w->base.widget = gtk_hscale_new_with_range(0.0,1.0,0.05);
 	w->base.init    = volumescale_init;
 	w->base.message = volumescale_message;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);

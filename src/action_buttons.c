@@ -3,6 +3,7 @@
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
 #include "deadbeef_util.h"
+#include "gtk2.h"
 
 extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;
@@ -110,23 +111,30 @@ static int actionbuttons_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attr
 	return 0;
 }
 
-#define BUTTON_ACTION_INIT(button,name) \
-	gtk_actionable_set_action_name(GTK_ACTIONABLE(button),"db." name);\
-	{\
-		DB_plugin_action_t *db_action = g_hash_table_lookup(w->db_action_map,name);\
-		if(db_action) gtk_widget_set_tooltip_text(button,db_action->title);\
-	}
+#if GTK_CHECK_VERSION(3,0,0)
+	#define BUTTON_ACTION_INIT(button,name) \
+		gtk_actionable_set_action_name(GTK_ACTIONABLE(button),"db." name);\
+		{\
+			DB_plugin_action_t *db_action = g_hash_table_lookup(w->db_action_map,name);\
+			if(db_action) gtk_widget_set_tooltip_text(button,db_action->title);\
+		}
+#else
+	//TODO
+	#define BUTTON_ACTION_INIT(button,name)
+#endif
 
 ddb_gtkui_widget_t *actionbuttons_create(){
 	struct actionbuttons *w = calloc(1,sizeof(struct actionbuttons));
-	w->base.widget = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+	w->base.widget = gtk_hbutton_box_new();
 	w->base.init    = actionbuttons_init;
 	w->base.destroy = actionbuttons_destroy;
 	w->base.message = actionbuttons_message;
 	w->callback_id = 0;
 	w->db_action_map = g_hash_table_new_full(g_str_hash,g_str_equal,free,NULL); //TODO: Should this be in create or init (here)?
 
-	GActionGroup *action_group = deadbeef_action_group(w->db_action_map);
+	#if GTK_CHECK_VERSION(3,0,0)
+	gtk_widget_insert_action_group(GTK_WIDGET(w->base.widget),"db",deadbeef_action_group(w->db_action_map));
+	#endif
 
 		#define button w->buttons[BUTTON_PREV]
 		button = gtk_button_new_from_icon_name("media-skip-backward-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR);
@@ -186,8 +194,6 @@ ddb_gtkui_widget_t *actionbuttons_create(){
 		//gtk_box_pack_start(GTK_BOX(w->base.widget),data->menu_button,false,false,0);
 
 		gtk_button_box_set_layout(GTK_BUTTON_BOX(w->base.widget),GTK_BUTTONBOX_EXPAND);
-
-	gtk_widget_insert_action_group(GTK_WIDGET(w->base.widget),"db",action_group);
 
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
