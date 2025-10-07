@@ -9,6 +9,8 @@ ddb_gtkui_widget_t *actionbuttons_create();
 ddb_gtkui_widget_t *volumescale_create();
 ddb_gtkui_widget_t *dspcombo_create();
 ddb_gtkui_widget_t *menutoggle_create();
+ddb_gtkui_widget_t *iconbutton_create();
+ddb_gtkui_widget_t *tftester_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
 ddb_gtkui_widget_t *ratingtoggle_create();
@@ -56,10 +58,12 @@ static int altwidgets_connect(){
 	}
 	altwidgets_data.db_action_group = G_ACTION_GROUP(group);
 
-	gtkui_plugin->w_reg_widget("Action Buttons"    ,0                           ,actionbuttons_create,"actionbuttons",NULL);
-	gtkui_plugin->w_reg_widget("Volume Scale"      ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
-	gtkui_plugin->w_reg_widget("DSP Combo"         ,0                           ,dspcombo_create     ,"dspcombo"     ,NULL);
-	gtkui_plugin->w_reg_widget("Menu Toggle Button",0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
+	gtkui_plugin->w_reg_widget("Action Buttons"         ,0                           ,actionbuttons_create,"actionbuttons",NULL);
+	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
+	gtkui_plugin->w_reg_widget("DSP Combo"              ,0                           ,dspcombo_create     ,"dspcombo"     ,NULL);
+	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
+	gtkui_plugin->w_reg_widget("Icon Button"            ,DDB_WF_SUPPORTS_EXTENDED_API,iconbutton_create   ,"iconbutton"   ,NULL);
+	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create     ,"tftester"     ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
 	gtkui_plugin->w_reg_widget("Rating Toggle"     ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
@@ -75,6 +79,10 @@ static int altwidgets_connect(){
 	//An alternative would be to use the pointer approach and extend the GTKUI API to be able to listen to widget creations/removals.
 	//If it is not possible to extend the GTKUI API, a plugin could provide API extensions instead. For example a plugin that provides a list of root widgets which every plugin can register into.
 
+	//TODO: Search window as a widget. But that is probably quite difficult without a lot of copy-pasting. See deadbeef/plugins/gtkui/search.c.
+
+	//TODO: An action to create a new window. This new window should have a root widget (does the design mode work in a different window).
+
 	return 0;
 }
 
@@ -84,6 +92,7 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("volumescale");
 		gtkui_plugin->w_unreg_widget("dspcombo");
 		gtkui_plugin->w_unreg_widget("menutoggle");
+		gtkui_plugin->w_unreg_widget("iconbutton");
 
 		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("ratingtoggle");

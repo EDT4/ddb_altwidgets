@@ -49,4 +49,3 @@ ddb_gtkui_widget_t *menutoggle_create(){
 
 	return(ddb_gtkui_widget_t*)w;
 }
-
