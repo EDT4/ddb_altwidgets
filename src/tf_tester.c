@@ -69,7 +69,7 @@ static void on_input_changed(GtkTextBuffer *buffer,gpointer user_data){
 
 static int tftester_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,uint32_t p1,__attribute__((unused)) uint32_t p2){
 	struct tftester *data = (struct tftester*)w;
-	if(id == DB_EV_CURSOR_MOVED || (id == DB_EV_PLAYLISTCHANGED && p1 == DDB_PLAYLIST_CHANGE_SELECTION)){
+	if(id == DB_EV_PLAYLISTSWITCHED || (id == DB_EV_PLAYLISTCHANGED && p1 == (DDB_PLAYLIST_CHANGE_CONTENT || p1 == DDB_PLAYLIST_CHANGE_SELECTION))){
 		if(data->callback_id == 0){
 			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(output_update),data,on_callback_end);
 		}

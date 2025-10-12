@@ -11,6 +11,7 @@ ddb_gtkui_widget_t *dspcombo_create();
 ddb_gtkui_widget_t *menutoggle_create();
 ddb_gtkui_widget_t *iconbutton_create();
 ddb_gtkui_widget_t *tftester_create();
+ddb_gtkui_widget_t *queueview_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
 ddb_gtkui_widget_t *ratingtoggle_create();
@@ -64,6 +65,7 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
 	gtkui_plugin->w_reg_widget("Icon Button"            ,DDB_WF_SUPPORTS_EXTENDED_API,iconbutton_create   ,"iconbutton"   ,NULL);
 	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create     ,"tftester"     ,NULL);
+	gtkui_plugin->w_reg_widget("Queue View"             ,DDB_WF_SUPPORTS_EXTENDED_API,queueview_create    ,"queueview"    ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
 	gtkui_plugin->w_reg_widget("Rating Toggle"     ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
@@ -93,6 +95,8 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("dspcombo");
 		gtkui_plugin->w_unreg_widget("menutoggle");
 		gtkui_plugin->w_unreg_widget("iconbutton");
+		gtkui_plugin->w_unreg_widget("tftester");
+		gtkui_plugin->w_unreg_widget("queueview");
 
 		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("ratingtoggle");
