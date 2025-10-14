@@ -88,6 +88,7 @@ static void on_edit_column(GtkWidget *menu_item,struct queueview *data){
 	if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK){
 		strcpy(data->columns[i].title,gtk_entry_get_text(GTK_ENTRY(title_entry)));
 		strcpy(data->columns[i].format,gtk_entry_get_text(GTK_ENTRY(format_entry)));
+		deadbeef->tf_free(data->columns[i].tf);
 		data->columns[i].tf = deadbeef->tf_compile(data->columns[i].format);
 		gtk_label_set_text(GTK_LABEL(gtk_tree_view_column_get_widget(column)),data->columns[i].title);
 		model_update(data);
@@ -323,6 +324,7 @@ static void queueview_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const 
 			while(true){switch(*c){
 				case ';':
 					data->columns[j].format[k] = '\0';
+					deadbeef->tf_free(data->columns[j].tf);
 					data->columns[j].tf = deadbeef->tf_compile(data->columns[j].format);
 					j+= 1;
 					k = 0;
@@ -330,6 +332,7 @@ static void queueview_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const 
 					break;
 				case '\0':
 					data->columns[j].format[k] = '\0';
+					deadbeef->tf_free(data->columns[j].tf);
 					data->columns[j].tf = deadbeef->tf_compile(data->columns[j].format);
 					goto End;
 				default:
