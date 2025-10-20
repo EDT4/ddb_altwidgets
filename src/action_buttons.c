@@ -21,7 +21,7 @@ enum{
 	BUTTON_COUNT
 };
 
-struct actionbuttons{
+struct playbackbuttonsalt{
 	ddb_gtkui_widget_t base;
 	GtkWidget *buttons[BUTTON_COUNT];
 	guint callback_id;
@@ -30,8 +30,8 @@ struct actionbuttons{
 #define PLAY_IMAGE_NEW  gtk_image_new_from_icon_name("media-playback-start-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR)
 #define PAUSE_IMAGE_NEW gtk_image_new_from_icon_name("media-playback-pause-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR)
 
-static gboolean actionbuttons_on_play(gpointer user_data){
-	struct actionbuttons *data = user_data;
+static gboolean playbackbuttonsalt_on_play(gpointer user_data){
+	struct playbackbuttonsalt *data = user_data;
 	gtk_widget_set_sensitive(data->buttons[BUTTON_JUMP_TO_CURRENT],true);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],true);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],true);
@@ -39,8 +39,8 @@ static gboolean actionbuttons_on_play(gpointer user_data){
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PAUSE_IMAGE_NEW);
 	return G_SOURCE_REMOVE;
 }
-static gboolean actionbuttons_on_stop(gpointer user_data){
-	struct actionbuttons *data = user_data;
+static gboolean playbackbuttonsalt_on_stop(gpointer user_data){
+	struct playbackbuttonsalt *data = user_data;
 	gtk_widget_set_sensitive(data->buttons[BUTTON_JUMP_TO_CURRENT],false);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],false);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],!!deadbeef->playqueue_get_count());
@@ -48,31 +48,31 @@ static gboolean actionbuttons_on_stop(gpointer user_data){
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PLAY_IMAGE_NEW);
 	return G_SOURCE_REMOVE;
 }
-static gboolean actionbuttons_on_unpause(gpointer user_data){
-	struct actionbuttons *data = user_data;
+static gboolean playbackbuttonsalt_on_unpause(gpointer user_data){
+	struct playbackbuttonsalt *data = user_data;
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PAUSE_IMAGE_NEW);
 	return G_SOURCE_REMOVE;
 }
-static gboolean actionbuttons_on_queue(gpointer user_data){
-	struct actionbuttons *data = user_data;
+static gboolean playbackbuttonsalt_on_queue(gpointer user_data){
+	struct playbackbuttonsalt *data = user_data;
 	bool b = !!deadbeef->playqueue_get_count();
 	struct DB_output_s* output = deadbeef->get_output();
 	if(output){b = b || output->state() != DDB_PLAYBACK_STATE_STOPPED;}
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],b);
 	return G_SOURCE_REMOVE;
 }
-static gboolean actionbuttons_on_pause(gpointer user_data){
-	struct actionbuttons *data = user_data;
+static gboolean playbackbuttonsalt_on_pause(gpointer user_data){
+	struct playbackbuttonsalt *data = user_data;
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PLAY_IMAGE_NEW);
 	return G_SOURCE_REMOVE;
 }
-static void actionbuttons_on_callback_end(void *user_data){
-	struct actionbuttons *data = user_data;
+static void playbackbuttonsalt_on_callback_end(void *user_data){
+	struct playbackbuttonsalt *data = user_data;
 	data->callback_id = 0;
 }
 
-static void actionbuttons_init(ddb_gtkui_widget_t *w){
-	struct actionbuttons *data = (struct actionbuttons*)w;
+static void playbackbuttonsalt_init(ddb_gtkui_widget_t *w){
+	struct playbackbuttonsalt *data = (struct playbackbuttonsalt*)w;
 
 	//Initial state.
 	struct DB_output_s* output = deadbeef->get_output();
@@ -80,41 +80,41 @@ static void actionbuttons_init(ddb_gtkui_widget_t *w){
 		switch(output->state()){
 			case DDB_PLAYBACK_STATE_STOPPED:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_stop,data,actionbuttons_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_stop,data,playbackbuttonsalt_on_callback_end);
 				break;
 			case DDB_PLAYBACK_STATE_PLAYING:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_play,data,actionbuttons_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_play,data,playbackbuttonsalt_on_callback_end);
 				break;
 			case DDB_PLAYBACK_STATE_PAUSED:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_pause,data,actionbuttons_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_pause,data,playbackbuttonsalt_on_callback_end);
 				break;
 		}
 	}
 }
 
-static int actionbuttons_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,uint32_t p1,__attribute__((unused)) uint32_t p2){
-	struct actionbuttons *data = (struct actionbuttons*)w;
+static int playbackbuttonsalt_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,uint32_t p1,__attribute__((unused)) uint32_t p2){
+	struct playbackbuttonsalt *data = (struct playbackbuttonsalt*)w;
 	//TODO: MAybe instead of sentivitiy, set enabled on actions.
 	switch(id){
 		case DB_EV_SONGFINISHED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_stop,data,actionbuttons_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_stop,data,playbackbuttonsalt_on_callback_end);
 			break;
 		case DB_EV_SONGSTARTED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_play,data,actionbuttons_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_play,data,playbackbuttonsalt_on_callback_end);
 			break;
 		case DB_EV_PAUSED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,p1? actionbuttons_on_pause : actionbuttons_on_unpause,data,actionbuttons_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,p1? playbackbuttonsalt_on_pause : playbackbuttonsalt_on_unpause,data,playbackbuttonsalt_on_callback_end);
 			break;
 		case DB_EV_TRACKINFOCHANGED:
 		case DB_EV_PLAYLISTCHANGED:
 			if(p1 == DDB_PLAYLIST_CHANGE_PLAYQUEUE){
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,actionbuttons_on_queue,data,actionbuttons_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_queue,data,playbackbuttonsalt_on_callback_end);
 			}
 			break;
 	}
@@ -145,11 +145,11 @@ static int actionbuttons_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attr
 		}
 #endif
 
-ddb_gtkui_widget_t *actionbuttons_create(){
-	struct actionbuttons *w = calloc(1,sizeof(struct actionbuttons));
+ddb_gtkui_widget_t *playbackbuttonsalt_create(){
+	struct playbackbuttonsalt *w = calloc(1,sizeof(struct playbackbuttonsalt));
 	w->base.widget = gtk_hbutton_box_new();
-	w->base.init    = actionbuttons_init;
-	w->base.message = actionbuttons_message;
+	w->base.init    = playbackbuttonsalt_init;
+	w->base.message = playbackbuttonsalt_message;
 	w->callback_id = 0;
 
 	#if GTK_CHECK_VERSION(3,0,0)

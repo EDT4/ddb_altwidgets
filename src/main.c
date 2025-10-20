@@ -5,11 +5,11 @@
 #include "deadbeef_util.h"
 #include "main.h"
 
-ddb_gtkui_widget_t *actionbuttons_create();
+ddb_gtkui_widget_t *playbackbuttonsalt_create();
 ddb_gtkui_widget_t *volumescale_create();
 ddb_gtkui_widget_t *dspcombo_create();
 ddb_gtkui_widget_t *menutoggle_create();
-ddb_gtkui_widget_t *iconbutton_create();
+ddb_gtkui_widget_t *buttonalt_create();
 ddb_gtkui_widget_t *tftester_create();
 ddb_gtkui_widget_t *queueview_create();
 
@@ -59,16 +59,16 @@ static int altwidgets_connect(){
 	}
 	altwidgets_data.db_action_group = G_ACTION_GROUP(group);
 
-	gtkui_plugin->w_reg_widget("Action Buttons"         ,0                           ,actionbuttons_create,"actionbuttons",NULL);
-	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
-	gtkui_plugin->w_reg_widget("DSP Combo"              ,DDB_WF_SUPPORTS_EXTENDED_API,dspcombo_create     ,"dspcombo"     ,NULL);
-	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
-	gtkui_plugin->w_reg_widget("Icon Button"            ,DDB_WF_SUPPORTS_EXTENDED_API,iconbutton_create   ,"iconbutton"   ,NULL);
-	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create     ,"tftester"     ,NULL);
-	gtkui_plugin->w_reg_widget("Queue View"             ,DDB_WF_SUPPORTS_EXTENDED_API,queueview_create    ,"queueview"    ,NULL);
+	gtkui_plugin->w_reg_widget("Playback Buttons (Alt)" ,0                           ,playbackbuttonsalt_create,"playbackbuttonsalt",NULL);
+	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create       ,"volumescale"       ,NULL);
+	gtkui_plugin->w_reg_widget("DSP Combo"              ,DDB_WF_SUPPORTS_EXTENDED_API,dspcombo_create          ,"dspcombo"          ,NULL);
+	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create        ,"menutoggle"        ,NULL);
+	gtkui_plugin->w_reg_widget("Button (Alt)"           ,DDB_WF_SUPPORTS_EXTENDED_API,buttonalt_create         ,"buttonalt"         ,NULL);
+	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create          ,"tftester"          ,NULL);
+	gtkui_plugin->w_reg_widget("Queue View"             ,DDB_WF_SUPPORTS_EXTENDED_API,queueview_create         ,"queueview"         ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
-	gtkui_plugin->w_reg_widget("Rating Toggle"     ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
+	gtkui_plugin->w_reg_widget("Rating Toggle",0,ratingtoggle_create ,"ratingtoggle",NULL);
 	#endif
 	//TODO: Custom action button
 
@@ -92,11 +92,11 @@ static int altwidgets_connect(){
 
 static int altwidgets_disconnect(){
 	if(gtkui_plugin){
-		gtkui_plugin->w_unreg_widget("actionbuttons");
+		gtkui_plugin->w_unreg_widget("playbackbuttonsalt");
 		gtkui_plugin->w_unreg_widget("volumescale");
 		gtkui_plugin->w_unreg_widget("dspcombo");
 		gtkui_plugin->w_unreg_widget("menutoggle");
-		gtkui_plugin->w_unreg_widget("iconbutton");
+		gtkui_plugin->w_unreg_widget("buttonalt");
 		gtkui_plugin->w_unreg_widget("tftester");
 		gtkui_plugin->w_unreg_widget("queueview");
 

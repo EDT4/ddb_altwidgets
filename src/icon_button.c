@@ -11,7 +11,7 @@ extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;
 extern struct altwidgets altwidgets_data;
 
-struct iconbutton{
+struct buttonalt{
 	ddb_gtkui_widget_t base;
 	ddb_gtkui_widget_extended_api_t exapi;
 	DB_plugin_action_t *action;
@@ -22,7 +22,7 @@ struct iconbutton{
 	guint callback_id;
 };
 
-static void update_label(struct iconbutton *data){
+static void update_label(struct buttonalt *data){
 	char buffer[200];
 	ddb_tf_context_t ctx = {
 		._size = sizeof(ddb_tf_context_t),
@@ -32,7 +32,7 @@ static void update_label(struct iconbutton *data){
 	gtk_button_set_label(GTK_BUTTON(data->base.widget),deadbeef->tf_eval(&ctx,data->label_tf,buffer,sizeof(buffer)) > 0? buffer : data->label);
 }
 
-static void on_set_label(struct iconbutton *data){
+static void on_set_label(struct buttonalt *data){
 	if(data->label[0] =='\0'){
 		gtk_button_set_label(GTK_BUTTON(data->base.widget),NULL);
 	}else if(strchr(data->label,'$') || strchr(data->label,'%')){
@@ -45,12 +45,12 @@ static void on_set_label(struct iconbutton *data){
 }
 
 static void on_button_clicked(__attribute__((unused)) GtkToggleButton *button,gpointer user_data){
-	struct iconbutton *data = (struct iconbutton*) user_data;
+	struct buttonalt *data = (struct buttonalt*) user_data;
 	if(data->action) action_call(data->action,DDB_ACTION_CTX_MAIN);
 }
 
-static void iconbutton_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const char **keyvalues){
-	struct iconbutton *data = (struct iconbutton*)base;
+static void buttonalt_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const char **keyvalues){
+	struct buttonalt *data = (struct buttonalt*)base;
 	for(size_t i=0; keyvalues[i]!=NULL; i+=2){
 		if(strcmp(keyvalues[i],"action") == 0){
 			data->action = g_hash_table_lookup(altwidgets_data.db_action_map,keyvalues[i+1]);
@@ -71,8 +71,8 @@ static void iconbutton_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const
 	if(data->icon_name[0]) gtk_button_set_image(GTK_BUTTON(data->base.widget),gtk_image_new_from_icon_name(data->icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
 }
 #define KEYVALUES_COUNT 6
-static const char **iconbutton_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
-	struct iconbutton *data = (struct iconbutton*)base;
+static const char **buttonalt_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
+	struct buttonalt *data = (struct buttonalt*)base;
 	char const **kv = calloc(KEYVALUES_COUNT*2+1,sizeof(char *));
 
 	size_t i=0;
@@ -110,7 +110,7 @@ static const char **iconbutton_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 
 	return kv;
 }
-static void iconbutton_free_serialized_keyvalues(__attribute__((unused)) ddb_gtkui_widget_t *w,char const **keyvalues){
+static void buttonalt_free_serialized_keyvalues(__attribute__((unused)) ddb_gtkui_widget_t *w,char const **keyvalues){
 	const char **s = keyvalues;
 	while(s[0]){
 		if(memcmp("eventupdate",s,11) == 0) g_free((char*)(s[1]));
@@ -119,20 +119,20 @@ static void iconbutton_free_serialized_keyvalues(__attribute__((unused)) ddb_gtk
 	free(keyvalues);
 }
 
-static void iconbutton_option_action_on_changed(GtkEditable* self,gpointer user_data){
-	struct iconbutton *data = (struct iconbutton*)user_data;
+static void buttonalt_option_action_on_changed(GtkEditable* self,gpointer user_data){
+	struct buttonalt *data = (struct buttonalt*)user_data;
 	data->action = g_hash_table_lookup(altwidgets_data.db_action_map,gtk_entry_get_text(GTK_ENTRY(self)));
 	if(data->action) gtk_widget_set_tooltip_text(data->base.widget,data->action->title);
 }
-static void iconbutton_option_iconname_on_changed(GtkEditable* self,gpointer user_data){
-	struct iconbutton *data = (struct iconbutton*)user_data;
+static void buttonalt_option_iconname_on_changed(GtkEditable* self,gpointer user_data){
+	struct buttonalt *data = (struct buttonalt*)user_data;
 	const char *s = gtk_entry_get_text(GTK_ENTRY(self));
 	strlcpy(data->icon_name,s,sizeof(data->icon_name));
 	gtk_button_set_image(GTK_BUTTON(data->base.widget),s && s[0]!='\0'? gtk_image_new_from_icon_name(s,GTK_ICON_SIZE_SMALL_TOOLBAR): NULL);
 	//TODO: gtk_image_new_from_*
 }
-static void iconbutton_option_label_on_changed(GtkEditable* self,gpointer user_data){
-	struct iconbutton *data = (struct iconbutton*)user_data;
+static void buttonalt_option_label_on_changed(GtkEditable* self,gpointer user_data){
+	struct buttonalt *data = (struct buttonalt*)user_data;
 	const char *s = gtk_entry_get_text(GTK_ENTRY(self));
 	if(s){
 		strlcpy(data->label,s,sizeof(data->label));
@@ -141,10 +141,10 @@ static void iconbutton_option_label_on_changed(GtkEditable* self,gpointer user_d
 	}
 	on_set_label(data);
 }
-static void iconbutton_on_configure_close(GtkWidget* self,__attribute__((unused)) void* user_data){
+static void buttonalt_on_configure_close(GtkWidget* self,__attribute__((unused)) void* user_data){
 	gtk_widget_destroy(GTK_WIDGET(self)); //TODO: Is this necessary?
 }
-static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem* self,struct iconbutton *data){
+static void buttonalt_on_configure_activate(__attribute__((unused)) GtkMenuItem* self,struct buttonalt *data){
 	GtkWidget *dialog = gtk_dialog_new_with_buttons(
 		"Icon Button Configuration",
 		NULL, //TODO: What is the parent of this?
@@ -152,7 +152,7 @@ static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem
 		NULL,
 		NULL
 	);
-	g_signal_connect(dialog,"close",G_CALLBACK(iconbutton_on_configure_close),NULL);
+	g_signal_connect(dialog,"close",G_CALLBACK(buttonalt_on_configure_close),NULL);
 	GtkWidget *hbox;
 	GtkWidget *vbox;
 	GtkWidget *control;
@@ -164,7 +164,7 @@ static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem
 				gtk_box_pack_start(GTK_BOX(hbox),gtk_label_new("Action:"),false,false,0);
 				control = gtk_entry_new();
 					if(data->action && data->action->name) gtk_entry_set_text(GTK_ENTRY(control),data->action->name);
-					g_signal_connect(control,"changed",G_CALLBACK(iconbutton_option_action_on_changed),data);
+					g_signal_connect(control,"changed",G_CALLBACK(buttonalt_option_action_on_changed),data);
 				gtk_box_pack_start(GTK_BOX(hbox),control,true,true,0);
 			gtk_box_pack_start(GTK_BOX(vbox),hbox,false,false,0);
 
@@ -172,7 +172,7 @@ static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem
 				gtk_box_pack_start(GTK_BOX(hbox),gtk_label_new("Icon Name:"),false,false,0);
 				control = gtk_entry_new();
 					gtk_entry_set_text(GTK_ENTRY(control),data->icon_name);
-					g_signal_connect(control,"changed",G_CALLBACK(iconbutton_option_iconname_on_changed),data);
+					g_signal_connect(control,"changed",G_CALLBACK(buttonalt_option_iconname_on_changed),data);
 				gtk_box_pack_start(GTK_BOX(hbox),control,true,true,0);
 			gtk_box_pack_start(GTK_BOX(vbox),hbox,false,false,0);
 
@@ -180,7 +180,7 @@ static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem
 				gtk_box_pack_start(GTK_BOX(hbox),gtk_label_new("Label:"),false,false,0);
 				control = gtk_entry_new();
 					gtk_entry_set_text(GTK_ENTRY(control),data->label);
-					g_signal_connect(control,"changed",G_CALLBACK(iconbutton_option_label_on_changed),data);
+					g_signal_connect(control,"changed",G_CALLBACK(buttonalt_option_label_on_changed),data);
 				gtk_box_pack_start(GTK_BOX(hbox),control,true,true,0);
 			gtk_box_pack_start(GTK_BOX(vbox),hbox,false,false,0);
 
@@ -188,40 +188,40 @@ static void iconbutton_on_configure_activate(__attribute__((unused)) GtkMenuItem
 	gtk_widget_show_all(dialog);
 }
 
-void iconbutton_initmenu(struct ddb_gtkui_widget_s *w,GtkWidget *menu){
+void buttonalt_initmenu(struct ddb_gtkui_widget_s *w,GtkWidget *menu){
 	GtkWidget *item = gtk_menu_item_new_with_label("Configure");
-	g_signal_connect(G_OBJECT(item),"activate",G_CALLBACK(iconbutton_on_configure_activate),w);
+	g_signal_connect(G_OBJECT(item),"activate",G_CALLBACK(buttonalt_on_configure_activate),w);
 	gtk_widget_show(item);
 	gtk_container_add(GTK_CONTAINER(menu),item);
 }
 
-static void iconbutton_on_callback_end(void *user_data){
-	struct iconbutton *data = (struct iconbutton*)user_data;
+static void buttonalt_on_callback_end(void *user_data){
+	struct buttonalt *data = (struct buttonalt*)user_data;
 	data->callback_id = 0;
 }
 
-static int iconbutton_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,__attribute__((unused)) uint32_t p1,__attribute__((unused)) uint32_t p2){
-	struct iconbutton *data = (struct iconbutton*)w;
+static int buttonalt_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,__attribute__((unused)) uint32_t p1,__attribute__((unused)) uint32_t p2){
+	struct buttonalt *data = (struct buttonalt*)w;
 	if(!data->label_tf) return 0;
 	for(size_t i=0; i<sizeof(data->event_updates)/sizeof(data->event_updates[0]); i+=1){
 		if(data->event_updates[i] == 0) return 0;
 		if(data->event_updates[i] == id){
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(update_label),data,iconbutton_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(update_label),data,buttonalt_on_callback_end);
 			return 0;
 		}
 	}
 	return 0;
 }
 
-ddb_gtkui_widget_t *iconbutton_create(){
-	struct iconbutton *w = calloc(1,sizeof(struct iconbutton));
+ddb_gtkui_widget_t *buttonalt_create(){
+	struct buttonalt *w = calloc(1,sizeof(struct buttonalt));
 	w->base.widget = gtk_button_new();
-	w->base.initmenu = iconbutton_initmenu;
-	w->base.message = iconbutton_message;
+	w->base.initmenu = buttonalt_initmenu;
+	w->base.message = buttonalt_message;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
-	w->exapi.deserialize_from_keyvalues = iconbutton_deserialize_from_keyvalues;
-	w->exapi.serialize_to_keyvalues     = iconbutton_serialize_to_keyvalues;
-	w->exapi.free_serialized_keyvalues  = iconbutton_free_serialized_keyvalues;
+	w->exapi.deserialize_from_keyvalues = buttonalt_deserialize_from_keyvalues;
+	w->exapi.serialize_to_keyvalues     = buttonalt_serialize_to_keyvalues;
+	w->exapi.free_serialized_keyvalues  = buttonalt_free_serialized_keyvalues;
 	w->action = NULL;
 	w->icon_name[0] = '\0';
 	w->label[0] = '\0';
