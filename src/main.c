@@ -12,6 +12,8 @@ ddb_gtkui_widget_t *menutoggle_create();
 ddb_gtkui_widget_t *buttonalt_create();
 ddb_gtkui_widget_t *tftester_create();
 ddb_gtkui_widget_t *queueview_create();
+ddb_gtkui_widget_t *outputplugincombo_create();
+ddb_gtkui_widget_t *outputdevicecombo_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
 ddb_gtkui_widget_t *ratingtoggle_create();
@@ -32,7 +34,6 @@ static int altwidgets_stop(){
 		g_hash_table_remove_all(altwidgets_data.db_action_map);
 		g_hash_table_unref(altwidgets_data.db_action_map);
 	}
-	//free(altwidgets_data.db_action_group); //TODO: How to free?
 	return 0;
 }
 
@@ -66,11 +67,12 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Button (Alt)"           ,DDB_WF_SUPPORTS_EXTENDED_API,buttonalt_create         ,"buttonalt"         ,NULL);
 	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create          ,"tftester"          ,NULL);
 	gtkui_plugin->w_reg_widget("Queue View"             ,DDB_WF_SUPPORTS_EXTENDED_API,queueview_create         ,"queueview"         ,NULL);
+	gtkui_plugin->w_reg_widget("Output Plugin Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputplugincombo_create ,"outputplugincombo" ,NULL);
+	gtkui_plugin->w_reg_widget("Output Device Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputdevicecombo_create ,"outputdevicecombo" ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
 	gtkui_plugin->w_reg_widget("Rating Toggle",0,ratingtoggle_create ,"ratingtoggle",NULL);
 	#endif
-	//TODO: Custom action button
 
 	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself.
 	//The view should be a container which either hides or unloads (saves layout as json) and then shows/loads.
@@ -81,16 +83,11 @@ static int altwidgets_connect(){
 	//An alternative would be to use the pointer approach and extend the GTKUI API to be able to listen to widget creations/removals.
 	//If it is not possible to extend the GTKUI API, a plugin could provide API extensions instead. For example a plugin that provides a list of root widgets which every plugin can register into.
 
-	//TODO: Search window as a widget. But that is probably quite difficult without a lot of copy-pasting. See deadbeef/plugins/gtkui/search.c.
-
-	//TODO: An action to create a new window. This new window should have a root widget (does the design mode work in a different window).
-
-	//TODO: Output combo. See prefwin_init_sound_tab
-
 	return 0;
 }
 
 static int altwidgets_disconnect(){
+	//free(altwidgets_data.db_action_group); //TODO: How to free?
 	if(gtkui_plugin){
 		gtkui_plugin->w_unreg_widget("playbackbuttonsalt");
 		gtkui_plugin->w_unreg_widget("volumescale");
@@ -99,6 +96,8 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("buttonalt");
 		gtkui_plugin->w_unreg_widget("tftester");
 		gtkui_plugin->w_unreg_widget("queueview");
+		gtkui_plugin->w_unreg_widget("outputplugincombo");
+		gtkui_plugin->w_unreg_widget("outputdevicecombo");
 
 		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("ratingtoggle");
@@ -113,7 +112,7 @@ static DB_misc_t plugin ={
 	.plugin.api_vmajor = DB_API_VERSION_MAJOR,
 	.plugin.api_vminor = DB_API_VERSION_MINOR,
 	.plugin.version_major = 1,
-	.plugin.version_minor = 0,
+	.plugin.version_minor = 12,
 	.plugin.type = DB_PLUGIN_MISC,
 	#if GTK_CHECK_VERSION(3,0,0)
 	.plugin.id = "altwidgets-gtk3",
@@ -126,7 +125,7 @@ static DB_misc_t plugin ={
 		"\n"
 		"List of widgets provided:\n"
 		"\n"
-		"- Action Buttons:\n"
+		"- Playback Buttons (Alt):\n"
 		"Playback buttons and more with tooltips and state.\n"
 		"Buttons will be disabled depending on the state that the button controls.\n"
 		"This widget is unfortunately not configurable as of writing.\n"
@@ -142,7 +141,7 @@ static DB_misc_t plugin ={
 		"- Menu Toggle Button:\n"
 		"Toggles the visibility of the menu bar.\n"
 		"\n"
-		"- Icon Button:\n"
+		"- Button (Alt):\n"
 		"Provides a button using an icon based on gtk_image_new_from_icon_name.\n"
 		"gtk-icon-browser usually provides a way to see a list of icons together with their name,\n"
 		"but a GTK theme can also provide additional ones.\n"
@@ -158,6 +157,12 @@ static DB_misc_t plugin ={
 		"Play items in the queue can be removed by either Right-click > Unqueue\n"
 		"or by selecting and pressing the Delete key.\n"
 		"It is currently very bare-bones and lack a lot of other useful features.\n"
+		"\n"
+		"- Output Plugin Combo:\n"
+		"Selecting an output plugin.\n"
+		"\n"
+		"- Output Device Combo:\n"
+		"Selecting an output device of the output plugin.\n"
 		"\n"
 		"- Rating Toggle (GTK3):\n"
 		"Displays a popover with stars that can be selected.\n"
