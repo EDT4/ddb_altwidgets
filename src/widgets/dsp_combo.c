@@ -48,7 +48,7 @@ static bool build(void *combo,int *selected,void (*add)(void *combo,const char *
 			}
 
 			//Find index of active DSP preset by name if not found yet.
-			if(*selected < 0 && strcmp(prev_dsp_name,namelist[i]->d_name) == 0){*selected = i+1;}
+			if(*selected < 0 && strcmp(prev_dsp_name,namelist[i]->d_name) == 0){*selected = i;}
 
 			//Postpend name of DSP preset.
 			add(combo,namelist[i]->d_name);

@@ -16,7 +16,7 @@ ddb_gtkui_widget_t *outputplugincombo_create();
 ddb_gtkui_widget_t *outputdevicecombo_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
-ddb_gtkui_widget_t *ratingtoggle_create();
+ddb_gtkui_widget_t *ratingscale_create();
 ddb_gtkui_widget_t *popovertoggle_create();
 #endif
 
@@ -72,7 +72,7 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Output Device Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputdevicecombo_create ,"outputdevicecombo" ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
-	gtkui_plugin->w_reg_widget("Rating Toggle" ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
+	gtkui_plugin->w_reg_widget("Rating Scale"  ,0                           ,ratingscale_create  ,"ratingscale"  ,NULL);
 	gtkui_plugin->w_reg_widget("Popover Toggle",DDB_WF_SUPPORTS_EXTENDED_API,popovertoggle_create,"popovertoggle",NULL);
 	#endif
 
@@ -102,7 +102,7 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("outputdevicecombo");
 
 		#if GTK_CHECK_VERSION(3,0,0)
-		gtkui_plugin->w_unreg_widget("ratingtoggle");
+		gtkui_plugin->w_unreg_widget("ratingscale");
 		gtkui_plugin->w_unreg_widget("popovertoggle");
 		#endif
 
@@ -115,7 +115,7 @@ static DB_misc_t plugin ={
 	.plugin.api_vmajor = DB_API_VERSION_MAJOR,
 	.plugin.api_vminor = DB_API_VERSION_MINOR,
 	.plugin.version_major = 1,
-	.plugin.version_minor = 12,
+	.plugin.version_minor = 14,
 	.plugin.type = DB_PLUGIN_MISC,
 	#if GTK_CHECK_VERSION(3,0,0)
 	.plugin.id = "altwidgets-gtk3",
@@ -167,9 +167,12 @@ static DB_misc_t plugin ={
 		"- Output Device Combo:\n"
 		"Selecting an output device of the output plugin.\n"
 		"\n"
-		"- Rating Toggle (GTK3):\n"
-		"Displays a popover with stars that can be selected.\n"
+		"- Rating Scale (GTK3):\n"
+		"Displays a scale with stars that can be selected.\n"
 		"It is currently only a proof of concept and does nothing.\n"
+		"\n"
+		"- Popover Toggle (GTK3):\n"
+		"A button which displays a popover containing a widget when pressed.\n"
 	,
 	.plugin.copyright =
 		"MIT License\n"
