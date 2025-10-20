@@ -17,6 +17,7 @@ ddb_gtkui_widget_t *outputdevicecombo_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
 ddb_gtkui_widget_t *ratingtoggle_create();
+ddb_gtkui_widget_t *popovertoggle_create();
 #endif
 
 DB_functions_t *deadbeef;
@@ -71,7 +72,8 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Output Device Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputdevicecombo_create ,"outputdevicecombo" ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
-	gtkui_plugin->w_reg_widget("Rating Toggle",0,ratingtoggle_create ,"ratingtoggle",NULL);
+	gtkui_plugin->w_reg_widget("Rating Toggle" ,0                           ,ratingtoggle_create ,"ratingtoggle" ,NULL);
+	gtkui_plugin->w_reg_widget("Popover Toggle",DDB_WF_SUPPORTS_EXTENDED_API,popovertoggle_create,"popovertoggle",NULL);
 	#endif
 
 	//TODO: View switcher. Two widgets: one for selecting the view, the other for the view itself.
@@ -101,6 +103,7 @@ static int altwidgets_disconnect(){
 
 		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("ratingtoggle");
+		gtkui_plugin->w_unreg_widget("popovertoggle");
 		#endif
 
 		gtkui_plugin = NULL;
