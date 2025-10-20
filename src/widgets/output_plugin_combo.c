@@ -1,6 +1,6 @@
 #define STRUCT_NAME outputplugincombo
 #define CREATE_FN_NAME outputplugincombo_create
-#include "template/combo.h"
+#include "../template/combo.h"
 
 static const char *get(){
 	deadbeef->conf_lock();

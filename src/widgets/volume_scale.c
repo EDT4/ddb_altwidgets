@@ -3,7 +3,7 @@
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
 #include <math.h>
-#include "gtk2.h"
+#include "../gtk2.h"
 
 extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;

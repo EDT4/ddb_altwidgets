@@ -1,6 +1,6 @@
 #define STRUCT_NAME outputdevicecombo
 #define CREATE_FN_NAME outputdevicecombo_create
-#include "template/combo.h"
+#include "../template/combo.h"
 
 static const char *get(){
 	deadbeef->conf_lock();

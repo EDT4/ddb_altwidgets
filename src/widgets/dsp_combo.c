@@ -1,6 +1,6 @@
 #define STRUCT_NAME dspcombo
 #define CREATE_FN_NAME dspcombo_create
-#include "template/combo.h"
+#include "../template/combo.h"
 
 static const char *get(){
 	deadbeef->conf_lock();
