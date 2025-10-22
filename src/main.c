@@ -84,7 +84,7 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Output Device Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputdevicecombo_create ,"outputdevicecombo" ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
-	gtkui_plugin->w_reg_widget("Rating Scale"  ,0                           ,ratingscale_create  ,"ratingscale"  ,NULL);
+	gtkui_plugin->w_reg_widget("Rating Scale"  ,DDB_WF_SUPPORTS_EXTENDED_API,ratingscale_create  ,"ratingscale"  ,NULL);
 	gtkui_plugin->w_reg_widget("Popover Toggle",DDB_WF_SUPPORTS_EXTENDED_API,popovertoggle_create,"popovertoggle",NULL);
 	#endif
 
@@ -202,6 +202,7 @@ static DB_misc_t plugin ={
 		"- Rating Scale (GTK3):\n"
 		"Displays a scale with stars that can be selected.\n"
 		"It is currently only a proof of concept and does nothing.\n"
+		"Configuration keys: granularity: uint, marks: uint, min_value: float, max_value: float, meta_name: str.\n"
 		"\n"
 		"- Popover Toggle (GTK3):\n"
 		"A button which displays a popover containing a widget when pressed.\n"
