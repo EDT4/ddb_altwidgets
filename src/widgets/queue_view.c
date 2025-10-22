@@ -15,6 +15,7 @@ struct column_data{
 	char title[100];
 	char format[1000];
 	char *tf;
+	unsigned int width;
 };
 
 struct queueview{
@@ -39,6 +40,7 @@ void set_column_count(struct queueview *data,int count){
 			data->columns[i].title[0]  = '\0';
 			data->columns[i].format[0] = '\0';
 			data->columns[i].tf = NULL;
+			data->columns[i].width = 0;
 		}
 	}
 	data->column_count = count;
@@ -187,7 +189,13 @@ static void model_init(struct queueview *data){
 			g_object_set_data(G_OBJECT(column),"index",(void*)(intptr_t)(i-1));
 			gtk_tree_view_column_set_resizable(column,true);
 			gtk_tree_view_column_set_clickable(column,true);
-			gtk_tree_view_column_set_expand(column,true);
+			if(data->columns[i-1].width == 0){
+				gtk_tree_view_column_set_expand(column,true);
+			}else{
+				gtk_tree_view_column_set_expand(column,false);
+				gtk_tree_view_column_set_fixed_width(column,data->columns[i-1].width);
+			}
+
 			{
 				GtkWidget *label = gtk_label_new(data->columns[i-1].title);
 				gtk_tree_view_column_set_widget(column,label);
@@ -341,13 +349,27 @@ static void queueview_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const 
 					data->columns[j].format[k++] = *c;
 					break;
 			} c+= 1;}
+		}else if(strcmp(keyvalues[i],"width") == 0){
+			const char *c = keyvalues[i+1];
+			int j = 0;
+			while(true){
+				data->columns[j++].width = (unsigned int)strtoul(c,(char**)&c,10);
+				switch(*(c++)){
+					case ';':
+						if(j >= data->column_count) set_column_count(data,j+1);
+						break;
+					case '\0':
+						goto End;
+				}
+			}
 		}
 		End:;
 	}
 }
 static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	struct queueview *data = (struct queueview*)base;
-	#define ENTRIES 2
+	#define INT_BUFFER_LEN 20
+	#define ENTRIES 3
 	char const **kv = calloc(ENTRIES * 2 + 1,sizeof(char *));
 	size_t e = 0;
 
@@ -381,6 +403,19 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 				*v = '\0';
 			}
 		}
+
+		kv[e++] = "width";
+		{
+			char *v = malloc(data->column_count * (1+INT_BUFFER_LEN));
+			kv[e++] = v;
+			int c = 0;
+			Loop3:
+			v+= snprintf(v,INT_BUFFER_LEN,"%u",data->columns[c].width);
+			if(++c < data->column_count){ //Loop or end.
+				*(v++) = ';';
+				goto Loop3;
+			}
+		}
 	}
 
 	return kv;
@@ -390,6 +425,7 @@ static void queueview_free_serialized_keyvalues(ddb_gtkui_widget_t *base,char co
 	if(data->column_count){
 		free((char*)(keyvalues[1]));
 		free((char*)(keyvalues[3]));
+		free((char*)(keyvalues[5]));
 	}
 	free(keyvalues);
 }

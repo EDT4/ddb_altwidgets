@@ -189,7 +189,7 @@ static DB_misc_t plugin ={
 		"Play items in the queue can be removed by either Right-click > Unqueue\n"
 		"or by selecting and pressing the Delete key.\n"
 		"It is currently very bare-bones and lack a lot of other useful features.\n"
-		"Configuration keys: title: str, format: str.\n"
+		"Configuration keys: title: list[str], format: list[str], width: list[uint].\n"
 		"\n"
 		"- Output Plugin Combo:\n"
 		"Selecting an output plugin.\n"
