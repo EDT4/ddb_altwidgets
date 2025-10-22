@@ -199,20 +199,6 @@ ddb_gtkui_widget_t *playbackbuttonsalt_create(){
 		gtk_box_pack_start(GTK_BOX(w->base.widget),button,false,false,0);
 		#undef button
 
-		//GtkWidget *button;
-		//button = gtk_button_new_from_icon_name("preferences-other-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR);
-		//	BUTTON_ACTION_INIT(button,"preferences");
-		//	gtk_style_context_add_class(gtk_widget_get_style_context(button),"flat");
-		//	gtk_widget_show(button);
-		//gtk_box_pack_start(GTK_BOX(w->base.widget),button,false,false,0);
-		//
-		//data->menu_button = gtk_button_new_from_icon_name("open-menu-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR);
-		//	g_signal_connect(data->menu_button,"clicked",G_CALLBACK(on_menubar_toggle),window);
-		//	gtk_widget_set_tooltip_text(data->menu_button,"Toggle menu bar"); //TODO: action_toggle_menu? toggle_menu? See all actions in deadbeef/plugins/gtkui/gtkui.c and all the DB_plugin_action_t.
-		//	gtk_style_context_add_class(gtk_widget_get_style_context(data->menu_button),"flat");
-		//	gtk_widget_show(data->menu_button);
-		//gtk_box_pack_start(GTK_BOX(w->base.widget),data->menu_button,false,false,0);
-
 		gtk_button_box_set_layout(GTK_BUTTON_BOX(w->base.widget),GTK_BUTTONBOX_EXPAND);
 
 	gtk_widget_show(w->base.widget);

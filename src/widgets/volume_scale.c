@@ -151,7 +151,6 @@ static void volumescale_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,cons
 }
 static const char **volumescale_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	struct volumescale *data = (struct volumescale*)base;
-	#define BUFFER_LEN 20
 	#define ENTRIES 5
 	char const **kv = calloc(ENTRIES * 2 + 1,sizeof(char *));
 
@@ -159,20 +158,16 @@ static const char **volumescale_serialize_to_keyvalues(ddb_gtkui_widget_t *base)
 	kv[1] = volumebar_scaling_str[data->options.scaling];
 
 	kv[2] = "step1";
-	kv[3] = malloc(BUFFER_LEN);
-	snprintf((char*)(kv[3]),BUFFER_LEN,"%f",data->options.step1);
+	kv[3] = g_strdup_printf("%f",data->options.step1);
 
 	kv[4] = "step2";
-	kv[5] = malloc(BUFFER_LEN);
-	snprintf((char*)(kv[5]),BUFFER_LEN,"%f",data->options.step2);
+	kv[5] = g_strdup_printf("%f",data->options.step2);
 
 	kv[6] = "width";
-	kv[7] = malloc(BUFFER_LEN);
-	snprintf((char*)(kv[7]),BUFFER_LEN,"%d",data->options.width);
+	kv[7] = g_strdup_printf("%d",data->options.width);
 
 	kv[8] = "height";
-	kv[9] = malloc(BUFFER_LEN);
-	snprintf((char*)(kv[9]),BUFFER_LEN,"%d",data->options.height);
+	kv[9] = g_strdup_printf("%d",data->options.height);
 
 	return kv;
 }

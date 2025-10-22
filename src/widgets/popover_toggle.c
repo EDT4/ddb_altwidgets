@@ -18,6 +18,9 @@ struct popovertoggle{
 	char icon_name[200];
 	char label[200];
 	char tooltip[200];
+	int width;
+	int height;
+	unsigned int padding;
 };
 
 static void on_popover_closed(__attribute__((unused)) GtkPopover* self,gpointer user_data){
@@ -52,14 +55,29 @@ static void popovertoggle_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,co
 			strlcpy(data->label,keyvalues[i+1],sizeof(data->label));
 		}else if(strcmp(keyvalues[i],"tooltip") == 0){
 			strlcpy(data->tooltip,keyvalues[i+1],sizeof(data->tooltip));
+		}else if(strcmp(keyvalues[i],"width") == 0){
+			data->width = atoi(keyvalues[i+1]);
+		}else if(strcmp(keyvalues[i],"height") == 0){
+			data->height = atoi(keyvalues[i+1]);
+		}else if(strcmp(keyvalues[i],"padding") == 0){
+			data->padding = (unsigned int)strtoul(keyvalues[i+1],NULL,10);
 		}
 	}
 }
-#define KEYVALUES_COUNT 3
+#define KEYVALUES_COUNT 6
 static const char **popovertoggle_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	struct popovertoggle *data = (struct popovertoggle*)base;
 	char const **kv = calloc(KEYVALUES_COUNT*2+1,sizeof(char *));
 	size_t i=0;
+
+	kv[i++] = "width";
+	kv[i++] = g_strdup_printf("%d",data->width);
+
+	kv[i++] = "height";
+	kv[i++] = g_strdup_printf("%d",data->height);
+
+	kv[i++] = "padding";
+	kv[i++] = g_strdup_printf("%u",data->padding);
 
 	if(data->icon_name[0]){
 		kv[i++] = "iconname";
@@ -81,6 +99,9 @@ static const char **popovertoggle_serialize_to_keyvalues(ddb_gtkui_widget_t *bas
 	return kv;
 }
 static void popovertoggle_free_serialized_keyvalues(__attribute__((unused)) ddb_gtkui_widget_t *w,char const **keyvalues){
+	free((void*)(keyvalues[1]));
+	free((void*)(keyvalues[3]));
+	free((void*)(keyvalues[5]));
 	free(keyvalues);
 }
 
@@ -89,6 +110,8 @@ static void popovertoggle_init(ddb_gtkui_widget_t *w){
 	if(data->icon_name[0]) gtk_button_set_image(GTK_BUTTON(data->base.widget),gtk_image_new_from_icon_name(data->icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
 	if(data->label[0])     gtk_button_set_label(GTK_BUTTON(data->base.widget),data->label);
 	if(data->tooltip[0])   gtk_widget_set_tooltip_text(data->base.widget,data->tooltip);
+	gtk_widget_set_size_request(data->popover,data->width,data->height);
+	gtk_container_set_border_width(GTK_CONTAINER(data->popover),data->padding);
 }
 
 ddb_gtkui_widget_t *popovertoggle_create(){
@@ -104,6 +127,9 @@ ddb_gtkui_widget_t *popovertoggle_create(){
 	w->icon_name[0] = '\0';
 	w->label[0] = '\0';
 	w->tooltip[0] = '\0';
+	w->width = -1;
+	w->height = -1;
+	w->padding = 0;
 
 	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(popovertoggle_on_toggled),w);
 	gtk_widget_show(w->base.widget);

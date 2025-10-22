@@ -157,8 +157,7 @@ static const char **on_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	#define ENTRIES 1
 	char const **kv = calloc(ENTRIES * 2 + 1,sizeof(char *));
 	kv[0] = "maxwidth";
-	kv[1] = malloc(INT_BUFFER_LEN);
-	snprintf((char*)(kv[1]),INT_BUFFER_LEN,"%d",data->max_width);
+	kv[1] = g_strdup_printf("%d",data->max_width);
 	return kv;
 }
 static void on_free_serialized_keyvalues(__attribute__((unused)) ddb_gtkui_widget_t *w,char const **keyvalues){

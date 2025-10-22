@@ -20,6 +20,7 @@ struct column_data{
 struct queueview{
 	ddb_gtkui_widget_t base;
     ddb_gtkui_widget_extended_api_t exapi;
+    GtkTreeView *tree_view;
 	guint callback_id;
 	int column_count;
 	int column_cap;
@@ -97,7 +98,7 @@ static void on_edit_column(GtkWidget *menu_item,struct queueview *data){
 }
 
 static void add_row(struct queueview *data,int index,DB_playItem_t *item){ //TODO: How do we save the item in the row? g_object_set_data_full with unref would be nice
-	GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(data->base.widget)));
+	GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(data->tree_view));
 	GtkTreeIter iter;
 	gtk_list_store_append(list_store,&iter);
 	gtk_list_store_set(list_store,&iter,0,index,-1);
@@ -158,9 +159,9 @@ static void model_init(struct queueview *data){
 		//g_signal_connect(list_store,"row-inserted",G_CALLBACK(on_row_inserted),NULL);
 
 		{//Remove old columns.
-			GList *cols = gtk_tree_view_get_columns(GTK_TREE_VIEW(data->base.widget));
+			GList *cols = gtk_tree_view_get_columns(data->tree_view);
 			for(GList *i=cols; i; i=g_list_next(i)){
-				gtk_tree_view_remove_column(GTK_TREE_VIEW(data->base.widget),GTK_TREE_VIEW_COLUMN(i->data));
+				gtk_tree_view_remove_column(data->tree_view,GTK_TREE_VIEW_COLUMN(i->data));
 			}
 			g_list_free(cols);
 		}
@@ -172,7 +173,7 @@ static void model_init(struct queueview *data){
 		//Index column.
 		renderer = gtk_cell_renderer_text_new();
 		column = gtk_tree_view_column_new_with_attributes("#",renderer,"text",0,NULL);
-		gtk_tree_view_append_column(GTK_TREE_VIEW(data->base.widget),column);
+		gtk_tree_view_append_column(data->tree_view,column);
 
 		//Data columns.
 		for(int i=1; i<= data->column_count; i++){
@@ -186,6 +187,7 @@ static void model_init(struct queueview *data){
 			g_object_set_data(G_OBJECT(column),"index",(void*)(intptr_t)(i-1));
 			gtk_tree_view_column_set_resizable(column,true);
 			gtk_tree_view_column_set_clickable(column,true);
+			gtk_tree_view_column_set_expand(column,true);
 			{
 				GtkWidget *label = gtk_label_new(data->columns[i-1].title);
 				gtk_tree_view_column_set_widget(column,label);
@@ -194,13 +196,13 @@ static void model_init(struct queueview *data){
 				g_object_set_data(G_OBJECT(button),"column",column);
 				g_signal_connect(button,"button-press-event",G_CALLBACK(on_column_button_press),data);
 			}
-			gtk_tree_view_append_column(GTK_TREE_VIEW(data->base.widget),column);
+			gtk_tree_view_append_column(data->tree_view,column);
 		}
-	gtk_tree_view_set_model(GTK_TREE_VIEW(data->base.widget),GTK_TREE_MODEL(list_store));
+	gtk_tree_view_set_model(data->tree_view,GTK_TREE_MODEL(list_store));
 }
 
 static gboolean model_update(struct queueview *data){
-	GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(data->base.widget)));
+	GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(data->tree_view));
 	//const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
 	//g_signal_handlers_block_matched(G_OBJECT(list_store),mask,0,0,NULL,(gpointer)on_row_deleted,data);
 	//g_signal_handlers_block_matched(G_OBJECT(list_store),mask,0,0,NULL,(gpointer)on_row_inserted,data);
@@ -220,8 +222,8 @@ static gint selection_compare_func(GtkTreePath *a,GtkTreePath *b){
 	return gtk_tree_path_get_indices(a)[0] < gtk_tree_path_get_indices(b)[0]? 1 : -1;
 }
 static void remove_selected_rows(struct queueview *data){
-	//GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(data->base.widget)));
-	GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(data->base.widget));
+	//GtkListStore * list_store = GTK_LIST_STORE(gtk_tree_view_get_model(data->tree_view));
+	GtkTreeSelection *selection = gtk_tree_view_get_selection(data->tree_view);
 	GList *selected_rows = gtk_tree_selection_get_selected_rows(selection,NULL);
 
 	//Sort desc to work with multiple selections. TODO: are there any better solutions?
@@ -349,7 +351,7 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	char const **kv = calloc(ENTRIES * 2 + 1,sizeof(char *));
 	size_t e = 0;
 
-	if(data->column_count){
+	if(data->column_count){ //TODO: Change this to just numbered?
 		kv[e++] = "title";
 		{
 			char *v = malloc(data->column_count * (1+sizeof(data->columns[0].title)));
@@ -357,7 +359,7 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 			int c = 0;
 			Loop1:
 			for(char *i = data->columns[c].title; *i; i+=1){if(*v != ';') *(v++) = *i;}
-			if(++c < data->column_count){
+			if(++c < data->column_count){ //Loop or end.
 				*(v++) = ';';
 				goto Loop1;
 			}else{
@@ -372,7 +374,7 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 			int c = 0;
 			Loop2:
 			for(char *i = data->columns[c].format; *i; i+=1){if(*v != ';') *(v++) = *i;}
-			if(++c < data->column_count){
+			if(++c < data->column_count){ //Loop or end.
 				*(v++) = ';';
 				goto Loop2;
 			}else{
@@ -383,21 +385,25 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 
 	return kv;
 }
-static void queueview_free_serialized_keyvalues(__attribute__((unused)) ddb_gtkui_widget_t *w,char const **keyvalues){
-	free((char*)(keyvalues[1]));
-	free((char*)(keyvalues[3]));
+static void queueview_free_serialized_keyvalues(ddb_gtkui_widget_t *base,char const **keyvalues){
+	struct queueview *data = (struct queueview*)base;
+	if(data->column_count){
+		free((char*)(keyvalues[1]));
+		free((char*)(keyvalues[3]));
+	}
 	free(keyvalues);
 }
 
 ddb_gtkui_widget_t *queueview_create(){
 	struct queueview *w = calloc(1,sizeof(struct queueview));
-	w->base.widget = gtk_tree_view_new();
+	w->base.widget = gtk_scrolled_window_new(NULL,NULL);
 	w->base.init    = queueview_init;
 	w->base.message = queueview_message;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
 	w->exapi.deserialize_from_keyvalues = queueview_deserialize_from_keyvalues;
 	w->exapi.serialize_to_keyvalues     = queueview_serialize_to_keyvalues;
 	w->exapi.free_serialized_keyvalues  = queueview_free_serialized_keyvalues;
+	w->tree_view = GTK_TREE_VIEW(gtk_tree_view_new());
 	w->callback_id = 0;
 	w->column_count = 1;
 	w->column_cap = 2;
@@ -406,10 +412,12 @@ ddb_gtkui_widget_t *queueview_create(){
 	strcpy(w->columns[0].format,"%title%");
 	w->columns[0].tf = deadbeef->tf_compile(w->columns[0].format);
 
-    gtk_tree_view_set_reorderable(GTK_TREE_VIEW(w->base.widget),TRUE);
-    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(w->base.widget)),GTK_SELECTION_MULTIPLE);
-    g_signal_connect(w->base.widget,"button-press-event",G_CALLBACK(on_row_button_press),w);
-    g_signal_connect(w->base.widget,"key-press-event",G_CALLBACK(on_key_press),w);
+    gtk_tree_view_set_reorderable(w->tree_view,TRUE);
+    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(w->tree_view),GTK_SELECTION_MULTIPLE);
+    g_signal_connect(GTK_WIDGET(w->tree_view),"button-press-event",G_CALLBACK(on_row_button_press),w);
+    g_signal_connect(GTK_WIDGET(w->tree_view),"key-press-event",G_CALLBACK(on_key_press),w);
+	gtk_widget_show(GTK_WIDGET(w->tree_view));
+	gtk_container_add(GTK_CONTAINER(w->base.widget),GTK_WIDGET(w->tree_view));
 
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);

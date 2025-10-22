@@ -26,7 +26,7 @@ struct altwidgets altwidgets_data;
 
 static int altwidgets_start(){
 	altwidgets_data.db_action_map = g_hash_table_new_full(g_str_hash,g_str_equal,free,NULL);
-	altwidgets_data.db_action_group = NULL;
+	altwidgets_data.db_action_group = G_ACTION_GROUP(g_simple_action_group_new());
 	return 0;
 }
 
@@ -34,6 +34,7 @@ static int altwidgets_stop(){
 	if(altwidgets_data.db_action_map){
 		g_hash_table_remove_all(altwidgets_data.db_action_map);
 		g_hash_table_unref(altwidgets_data.db_action_map);
+		altwidgets_data.db_action_map = NULL;
 	}
 	return 0;
 }
@@ -41,13 +42,16 @@ static int altwidgets_stop(){
 static void on_action_activate(__attribute__((unused)) GSimpleAction *act,GVariant *parameter,gpointer user_data){
 	action_call((DB_plugin_action_t*)user_data,parameter && g_variant_is_of_type(parameter,G_VARIANT_TYPE_INT32)? g_variant_get_int32(parameter) : DDB_ACTION_CTX_MAIN);
 }
-static int altwidgets_connect(){
-	gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
-	if(!gtkui_plugin) return -1;
+static void on_actions_reload(){ //TODO: In which thread should this be executed?
+	//Remove old.
+	g_hash_table_remove_all(altwidgets_data.db_action_map);
+	gchar **actions = g_action_group_list_actions(G_ACTION_GROUP(altwidgets_data.db_action_group));
+	for(; *actions; actions+=1){
+		g_action_map_remove_action(G_ACTION_MAP(altwidgets_data.db_action_group),*actions);
+	}
+	g_strfreev(actions);
 
-	//Prepare action map and action group
-	//TODO: Is this too early? Have all the plugins registered their actions at this point?
-	GSimpleActionGroup *group = g_simple_action_group_new();
+	//Add new.
 	for(DB_plugin_t **plugin = deadbeef->plug_get_list() ; *plugin ; plugin++){
 		if(!(*plugin)->get_actions) continue;
 		for(DB_plugin_action_t *db_action = (*plugin)->get_actions(NULL) ; db_action; db_action = db_action->next){
@@ -55,11 +59,19 @@ static int altwidgets_connect(){
 				GSimpleAction *action = g_simple_action_new(db_action->name,(db_action->flags & DB_ACTION_MULTIPLE_TRACKS) ? G_VARIANT_TYPE_INT32 : NULL);
 				g_hash_table_replace(altwidgets_data.db_action_map,strdup(db_action->name),db_action);
 				g_signal_connect(action,"activate",G_CALLBACK(on_action_activate),db_action);
-				g_action_map_add_action(G_ACTION_MAP(group),G_ACTION(action));
+				g_action_map_add_action(G_ACTION_MAP(altwidgets_data.db_action_group),G_ACTION(action));
+				g_object_unref(action);
 			}
 		}
 	}
-	altwidgets_data.db_action_group = G_ACTION_GROUP(group);
+}
+
+static int altwidgets_connect(){
+	gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
+	if(!gtkui_plugin) return -1;
+
+	//Prepare action map and action group
+	on_actions_reload();
 
 	gtkui_plugin->w_reg_widget("Playback Buttons (Alt)" ,0                           ,playbackbuttonsalt_create,"playbackbuttonsalt",NULL);
 	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create       ,"volumescale"       ,NULL);
@@ -89,7 +101,7 @@ static int altwidgets_connect(){
 }
 
 static int altwidgets_disconnect(){
-	//free(altwidgets_data.db_action_group); //TODO: How to free?
+	//free(altwidgets_data.db_action_group); //TODO: How to free? g_object_unref?
 	if(gtkui_plugin){
 		gtkui_plugin->w_unreg_widget("playbackbuttonsalt");
 		gtkui_plugin->w_unreg_widget("volumescale");
@@ -107,6 +119,15 @@ static int altwidgets_disconnect(){
 		#endif
 
 		gtkui_plugin = NULL;
+	}
+	return 0;
+}
+
+static int altwidgets_message(uint32_t id,__attribute__((unused)) uintptr_t ctx,__attribute__((unused)) uint32_t p1,__attribute__((unused)) uint32_t p2){
+	switch(id){
+		case DB_EV_ACTIONSCHANGED:
+			on_actions_reload();
+			break;
 	}
 	return 0;
 }
@@ -137,9 +158,11 @@ static DB_misc_t plugin ={
 		"Volume selector by a scale widget.\n"
 		"Right-click to select either a linear, cubic or dB scale,\n"
 		"similar to the official volume widget.\n"
+		"Configuration keys: scale: str, step1: float, step2: float, width: int, height: int.\n"
 		"\n"
 		"- DSP Combo:\n"
 		"Selecting a saved DSP preset.\n"
+		"Configuration keys: maxwidth: int.\n"
 		"\n"
 		"- Menu Toggle Button:\n"
 		"Toggles the visibility of the menu bar.\n"
@@ -148,24 +171,33 @@ static DB_misc_t plugin ={
 		"Provides a button using an icon based on gtk_image_new_from_icon_name.\n"
 		"gtk-icon-browser usually provides a way to see a list of icons together with their name,\n"
 		"but a GTK theme can also provide additional ones.\n"
-		"The label allows for title formatting and will update depending on the specified deadbeef message events.\n"
+		"The label allows for title formatting and will update depending on deadbeef message event IDs if specified.\n"
+		"See deadbeef.h:DB_EV_* for a list of them.\n"
 		"The action is identified by the deadbeef action names.\n"
+		"A list of the default deadbeef actions can be found in deadbeef/src/coreplugin.c:action_*\n"
+		"Plugins are also able to provide additional actions.\n"
+		"deadbeef.h:DB_plugin_action_t::name is what to look for.\n"
+		"Configuration keys: action: str, iconname: str, label: str, eventupdate0: uint, eventupdate1: uint, eventupdate2: uint.\n"
 		"\n"
 		"- Title Formatting Tester:\n"
 		"Displays the title formatted string based on track selection.\n"
 		"Useful for testing and formatting track metadata.\n"
+		"Configuration keys: input: str.\n"
 		"\n"
 		"- Queue View:\n"
 		"Displays a list of play items that currently are in the play queue.\n"
 		"Play items in the queue can be removed by either Right-click > Unqueue\n"
 		"or by selecting and pressing the Delete key.\n"
 		"It is currently very bare-bones and lack a lot of other useful features.\n"
+		"Configuration keys: title: str, format: str.\n"
 		"\n"
 		"- Output Plugin Combo:\n"
 		"Selecting an output plugin.\n"
+		"Configuration keys: maxwidth: int.\n"
 		"\n"
 		"- Output Device Combo:\n"
 		"Selecting an output device of the output plugin.\n"
+		"Configuration keys: maxwidth: int.\n"
 		"\n"
 		"- Rating Scale (GTK3):\n"
 		"Displays a scale with stars that can be selected.\n"
@@ -173,6 +205,7 @@ static DB_misc_t plugin ={
 		"\n"
 		"- Popover Toggle (GTK3):\n"
 		"A button which displays a popover containing a widget when pressed.\n"
+		"Configuration keys: width: int, height: int, iconname: str, label: str, tooltip: str, padding: uint.\n"
 	,
 	.plugin.copyright =
 		"MIT License\n"
@@ -202,6 +235,7 @@ static DB_misc_t plugin ={
 	.plugin.disconnect = altwidgets_disconnect,
 	.plugin.start      = altwidgets_start,
 	.plugin.stop       = altwidgets_stop,
+	.plugin.message    = altwidgets_message,
 };
 
 __attribute__((visibility("default")))
