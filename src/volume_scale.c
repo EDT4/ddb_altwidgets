@@ -55,8 +55,8 @@ static gboolean volumescale_change(gpointer user_data){
 	}
 
 	{
-		char buffer[40];
-		snprintf(buffer,sizeof(buffer),"%f%% (%f dB)",amp*100.0,db);
+		char buffer[40]; //TODO: Display in cubic scale?
+		snprintf(buffer,sizeof(buffer),"%.2f%% (%f dB)",amp*100.0,db);
 		gtk_widget_set_tooltip_text(data->base.widget,buffer);
 	}
 
@@ -157,7 +157,7 @@ ddb_gtkui_widget_t *volumescale_create(){
     g_signal_connect(w->base.widget,"button_press_event",G_CALLBACK(on_volumebar_click),w);
 	g_signal_connect(w->base.widget,"value-changed",G_CALLBACK(on_volumescale_change),w);
 	gtk_scale_set_draw_value(GTK_SCALE(w->base.widget),false);
-	gtk_range_set_increments(GTK_RANGE(w->base.widget),0.01,0.1);
+	gtk_range_set_increments(GTK_RANGE(w->base.widget),0.01,0.05);
 	gtk_widget_set_size_request(w->base.widget,100,-1);
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
