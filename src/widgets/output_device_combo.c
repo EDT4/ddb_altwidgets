@@ -14,12 +14,12 @@ static void post_get(__attribute__((unused)) const char *output_plugin){
 }
 
 //See deadbeef/plugins/gtkui/prefwin/prefwinsound.c:on_pref_soundcard_changed.
-static bool set(const char *label,void *data,void (*skip_change)(void *data)){
+static bool set(const char *value,__attribute__((unused)) const char *label,void *data,void (*skip_change)(void *data)){
 	//TODO: Search for the output device (in case it does not exist anymore) before setting it in the config.
 	char key[100];
 	snprintf(key,sizeof(key),"%s_soundcard",deadbeef->get_output()->plugin.id);
 	skip_change(data);
-	deadbeef->conf_set_str(key,label);
+	deadbeef->conf_set_str(key,value);
 	deadbeef->sendmessage(DB_EV_CONFIGCHANGED,0,0,0);
 	deadbeef->sendmessage(DB_EV_REINIT_SOUND,0,0,0);
 	return true;
@@ -28,7 +28,7 @@ static bool set(const char *label,void *data,void (*skip_change)(void *data)){
 struct build_enum_soundcards_cb_data{
 	void *combo;
 	int *selected;
-	void (*add)(void *combo,const char *label);
+	void (*add)(void *combo,const char *value,const char *label);
 	const char *current;
 	size_t index;
 };
@@ -37,11 +37,11 @@ static void build_enum_soundcards_cb(const char *name,const char *desc,void *use
 	if(*data->selected < 0 && data->current && strcmp(name,data->current) == 0){
 		*data->selected = data->index;
 	}
-	data->add(data->combo,name);
+	data->add(data->combo,name,desc);
 	data->index+= 1;
 }
 //See deadbeef/plugins/gtkui/prefwin/prefwinsound.c:prefwin_fill_soundcards.
-static bool build(void *combo,int *selected,void (*add)(void *combo,const char *label)){
+static bool build(void *combo,int *selected,void (*add)(void *combo,const char *value,const char *label)){
 	if(deadbeef->get_output()->enum_soundcards){
 		char key[100];
 		snprintf(key,sizeof(key),"%s_soundcard",deadbeef->get_output()->plugin.id);
@@ -62,3 +62,5 @@ static int on_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((un
 	}
 	return 0;
 }
+
+static void init_menu(__attribute__((unused)) GtkMenu *w){}

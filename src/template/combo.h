@@ -25,14 +25,16 @@ static void post_get(const char* label);
 
 //Should set the current value in the model from the combo box label.
 //If a message is triggered by setting the value, resulting in a call to `on_change`, then `skip_change` should be called before actually setting the value in the model to avoid that.
-static bool set(const char *label,void *data,void (*skip_change)(void *data));
+static bool set(const char *value,const char *label,void *data,void (*skip_change)(void *data));
 
 //Builds the combo box items.
 //Call `add` for every item that should be added.
 //`selected` should be set to an index if a particular item should be selected. Its default is -1, which means that no item is selected.
-static bool build(void *combo,int *selected,void (*add)(void *combo,const char *label));
+static bool build(void *combo,int *selected,void (*add)(void *combo,const char *label,const char *value));
 
 static int on_message(struct ddb_gtkui_widget_s *w,uint32_t id,uintptr_t ctx,uint32_t p1,uint32_t p2);
+
+static void init_menu(GtkMenu *w);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -54,7 +56,7 @@ static void skip_change_cb(void *data){
 static void w_on_combo_change(GtkComboBox* self,gpointer user_data){
 	struct STRUCT_NAME *data = (struct STRUCT_NAME*)user_data;
 	if(gtk_combo_box_get_active(self) < 0) return;
-	if(!set(gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(self)),data,skip_change_cb)){
+	if(!set(gtk_combo_box_get_active_id(GTK_COMBO_BOX(self)),gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(self)),data,skip_change_cb)){
 	    const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
 	    g_signal_handlers_block_matched(self,mask,0,0,NULL,w_on_combo_change,data);
 	    gtk_combo_box_set_active(self,-1);
@@ -66,7 +68,7 @@ static void w_rebuild_combo(struct STRUCT_NAME *data){
 	gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT(data->base.widget));
 
 	int selected = -1; //Default is -1, meaning unselected.
-	if(build(GTK_COMBO_BOX_TEXT(data->base.widget),&selected,(void(*)(void*,const char*))gtk_combo_box_text_append_text)){
+	if(build(GTK_COMBO_BOX_TEXT(data->base.widget),&selected,(void(*)(void*,const char*,const char*))gtk_combo_box_text_append)){
 		//If the combo box items were successfully built, then select the active index if it was found.
 		const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
 		g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)w_on_combo_change,data);
@@ -119,6 +121,8 @@ static gboolean w_on_combo_click(__attribute__((unused)) GtkWidget *widget,GdkEv
 			item = gtk_menu_item_new_with_label("Refresh");
 				g_signal_connect_swapped(item,"activate",G_CALLBACK(w_rebuild_combo),data);
 			gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
+
+			init_menu(GTK_MENU(menu));
 
 			gtk_widget_show_all(menu);
 		gtk_menu_popup_at_pointer(GTK_MENU(menu),(GdkEvent*)event);

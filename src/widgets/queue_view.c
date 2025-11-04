@@ -122,10 +122,10 @@ static void add_row(struct queueview *data,int index,DB_playItem_t *item){ //TOD
 	}
 }
 
-//TODO: Drag and drop moving. Requires saving item
 /*
+//TODO: Handles drag and drop movement of items.
 static void on_row_deleted(GtkTreeModel* model,GtkTreePath* path,gpointer user_data){
-	printf("deleted %d\n",gtk_tree_path_get_indices(path)[0]);
+	deadbeef->playqueue_remove_nth(gtk_tree_path_get_indices(path)[0]);
 }
 static void on_row_inserted(GtkTreeModel* model,GtkTreePath* path,GtkTreeIter* iter,gpointer user_data){
 	printf("inserted %d\n",gtk_tree_path_get_indices(path)[0]);
@@ -301,6 +301,10 @@ static gboolean on_row_button_press(GtkWidget *widget,GdkEventButton *event,stru
 					g_signal_connect_swapped(item,"activate",G_CALLBACK(remove_selected_rows),data);
 				gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
 
+				GtkWidget *sep = gtk_separator_menu_item_new();
+					gtk_widget_show(sep);
+				gtk_menu_shell_append(GTK_MENU_SHELL(menu),sep);
+
 				item = gtk_menu_item_new_with_label("Play Now");
 					g_signal_connect_swapped(item,"activate",G_CALLBACK(play_selected_row),data);
 				gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
@@ -423,7 +427,7 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	if(data->column_count){ //TODO: Change this to just numbered?
 		kv[e++] = "title";
 		{
-			char *v = malloc(data->column_count * (1+sizeof(data->columns[0].title)));
+			char *v = malloc(data->column_count * (1+TITLE_LEN));
 			kv[e++] = v;
 			int c = 0;
 			Loop1:
@@ -438,7 +442,7 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 
 		kv[e++] = "format";
 		{
-			char *v = malloc(data->column_count * (1+sizeof(data->columns[0].format)));
+			char *v = malloc(data->column_count * (1+FORMAT_LEN));
 			kv[e++] = v;
 			int c = 0;
 			Loop2:
@@ -495,7 +499,7 @@ ddb_gtkui_widget_t *queueview_create(){
 	strcpy(w->columns[0].format,"%title%");
 	w->columns[0].tf = deadbeef->tf_compile(w->columns[0].format);
 
-	gtk_tree_view_set_reorderable(w->tree_view,TRUE);
+	//gtk_tree_view_set_reorderable(w->tree_view,TRUE);
 	gtk_tree_selection_set_mode(gtk_tree_view_get_selection(w->tree_view),GTK_SELECTION_MULTIPLE);
 	g_signal_connect(GTK_WIDGET(w->tree_view),"button-press-event",G_CALLBACK(on_row_button_press),w);
 	g_signal_connect(GTK_WIDGET(w->tree_view),"key-press-event",G_CALLBACK(on_key_press),w);
