@@ -3,6 +3,7 @@
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
 #include "deadbeef_util.h"
+#include "gtk2.h"
 #include "main.h"
 
 extern DB_functions_t *deadbeef;
@@ -107,7 +108,9 @@ ddb_gtkui_widget_t *tftester_create(){
 	w->base.widget = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
 		GtkWidget *input_scrolled = gtk_scrolled_window_new(NULL, NULL);
 			gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(input_scrolled),GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
+			#if GTK_CHECK_VERSION(3,0,0)
 			gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(input_scrolled),100);
+			#endif
 
 			GtkWidget *input_text_view = gtk_text_view_new();
 				gtk_text_view_set_editable(GTK_TEXT_VIEW(input_text_view),TRUE);
@@ -116,7 +119,9 @@ ddb_gtkui_widget_t *tftester_create(){
 
 		GtkWidget *output_scrolled = gtk_scrolled_window_new(NULL, NULL);
 			gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(output_scrolled),GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
+			#if GTK_CHECK_VERSION(3,0,0)
 			gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(output_scrolled),100);
+			#endif
 
 			w->output_text_view = gtk_text_view_new();
 				gtk_text_view_set_editable(GTK_TEXT_VIEW(w->output_text_view),FALSE);

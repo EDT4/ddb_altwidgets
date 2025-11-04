@@ -4,6 +4,7 @@
 #include <deadbeef/gtkui_api.h>
 #include <stdbool.h>
 #include "deadbeef_util.h"
+#include "gtk2.h"
 #include "main.h"
 
 extern DB_functions_t *deadbeef;

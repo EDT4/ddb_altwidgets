@@ -61,7 +61,7 @@ static int altwidgets_connect(){
 
 	gtkui_plugin->w_reg_widget("Action Buttons"         ,0                           ,actionbuttons_create,"actionbuttons",NULL);
 	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create  ,"volumescale"  ,NULL);
-	gtkui_plugin->w_reg_widget("DSP Combo"              ,0                           ,dspcombo_create     ,"dspcombo"     ,NULL);
+	gtkui_plugin->w_reg_widget("DSP Combo"              ,DDB_WF_SUPPORTS_EXTENDED_API,dspcombo_create     ,"dspcombo"     ,NULL);
 	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create   ,"menutoggle"   ,NULL);
 	gtkui_plugin->w_reg_widget("Icon Button"            ,DDB_WF_SUPPORTS_EXTENDED_API,iconbutton_create   ,"iconbutton"   ,NULL);
 	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create     ,"tftester"     ,NULL);
@@ -84,6 +84,8 @@ static int altwidgets_connect(){
 	//TODO: Search window as a widget. But that is probably quite difficult without a lot of copy-pasting. See deadbeef/plugins/gtkui/search.c.
 
 	//TODO: An action to create a new window. This new window should have a root widget (does the design mode work in a different window).
+
+	//TODO: Output combo. See prefwin_init_sound_tab
 
 	return 0;
 }

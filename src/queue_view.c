@@ -1,4 +1,4 @@
-//TODO: Drag and drop from playlist
+//TODO: Drag and drop from playlist. See deadbeef/plugins/gtkui/playlist/ddblistview.c:ddb_listview_list_drag_data_received
 //TODO: Jump to item menu. Requires saving item
 //TODO: Save column width
 
