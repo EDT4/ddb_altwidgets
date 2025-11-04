@@ -11,17 +11,20 @@
 extern DB_functions_t *deadbeef;
 extern ddb_gtkui_t *gtkui_plugin;
 
+#define TITLE_LEN 100
+#define FORMAT_LEN 1000
+
 struct column_data{
-	char title[100];
-	char format[1000];
+	char title[TITLE_LEN+1];
+	char format[FORMAT_LEN+1];
 	char *tf;
 	unsigned int width;
 };
 
 struct queueview{
 	ddb_gtkui_widget_t base;
-    ddb_gtkui_widget_extended_api_t exapi;
-    GtkTreeView *tree_view;
+	ddb_gtkui_widget_extended_api_t exapi;
+	GtkTreeView *tree_view;
 	guint callback_id;
 	int column_count;
 	int column_cap;
@@ -131,23 +134,23 @@ static void on_row_inserted(GtkTreeModel* model,GtkTreePath* path,GtkTreeIter* i
 
 static gboolean on_column_button_press(GtkWidget *widget,GdkEventButton *event,struct queueview *data){
 	if(event->button == GDK_BUTTON_SECONDARY){
-	 	GtkTreeViewColumn *column = GTK_TREE_VIEW_COLUMN(g_object_get_data(G_OBJECT(widget),"column"));
-	 	GtkWidget *menu = gtk_menu_new();
+		GtkTreeViewColumn *column = GTK_TREE_VIEW_COLUMN(g_object_get_data(G_OBJECT(widget),"column"));
+		GtkWidget *menu = gtk_menu_new();
 			g_object_set_data(G_OBJECT(menu),"column",column);
 
-		 	GtkWidget *edit_item = gtk_menu_item_new_with_label("Edit Column");
-		 		g_signal_connect(edit_item,"activate",G_CALLBACK(on_edit_column),data);
-		 	gtk_menu_shell_append(GTK_MENU_SHELL(menu),edit_item);
+			GtkWidget *edit_item = gtk_menu_item_new_with_label("Edit Column");
+				g_signal_connect(edit_item,"activate",G_CALLBACK(on_edit_column),data);
+			gtk_menu_shell_append(GTK_MENU_SHELL(menu),edit_item);
 
-		 	GtkWidget *add_item = gtk_menu_item_new_with_label("Add Column");
-		 		g_signal_connect(add_item,"activate",G_CALLBACK(on_add_column),data);
-		 	gtk_menu_shell_append(GTK_MENU_SHELL(menu),add_item);
+			GtkWidget *add_item = gtk_menu_item_new_with_label("Add Column");
+				g_signal_connect(add_item,"activate",G_CALLBACK(on_add_column),data);
+			gtk_menu_shell_append(GTK_MENU_SHELL(menu),add_item);
 
-		 	GtkWidget *remove_item = gtk_menu_item_new_with_label("Remove Column");
-		 		g_signal_connect(remove_item,"activate",G_CALLBACK(on_remove_column),data);
-		 	gtk_menu_shell_append(GTK_MENU_SHELL(menu),remove_item);
-	 	gtk_widget_show_all(menu);
-	 	gtk_menu_popup_at_pointer(GTK_MENU(menu),(GdkEvent*)event);
+			GtkWidget *remove_item = gtk_menu_item_new_with_label("Remove Column");
+				g_signal_connect(remove_item,"activate",G_CALLBACK(on_remove_column),data);
+			gtk_menu_shell_append(GTK_MENU_SHELL(menu),remove_item);
+		gtk_widget_show_all(menu);
+		gtk_menu_popup_at_pointer(GTK_MENU(menu),(GdkEvent*)event);
 	}
 	return TRUE;
 }
@@ -245,13 +248,51 @@ static void remove_selected_rows(struct queueview *data){
 	g_list_free_full(selected_rows,(GDestroyNotify)gtk_tree_path_free);
 }
 
-static void on_row_activate(){
-	puts("double");
+static void jump_to_selected_row(struct queueview *data){
+	GtkTreeSelection *selection = gtk_tree_view_get_selection(data->tree_view);
+	GList *selected_rows = gtk_tree_selection_get_selected_rows(selection,NULL);
+
+	if(selected_rows){
+		DB_playItem_t *item = deadbeef->playqueue_get_item(gtk_tree_path_get_indices((GtkTreePath *)selected_rows->data)[0]);
+		if(item){
+			deadbeef->pl_lock();
+			ddb_playlist_t *plt = deadbeef->pl_get_playlist(item);
+			if(plt){
+				deadbeef->plt_deselect_all(plt);
+				deadbeef->plt_item_set_selected(plt,item,1);
+				deadbeef->plt_set_curr(plt);
+				deadbeef->plt_unref(plt);
+				deadbeef->sendmessage(DB_EV_FOCUS_SELECTION,0,0,0);
+				deadbeef->sendmessage(DB_EV_PLAYLISTCHANGED,0,DDB_PLAYLIST_CHANGE_SELECTION,0);
+			}
+			deadbeef->pl_unlock();
+			deadbeef->pl_item_unref(item);
+		}
+		g_list_free_full(selected_rows,(GDestroyNotify)gtk_tree_path_free);
+	}
+}
+
+static void play_selected_row(struct queueview *data){
+	GtkTreeSelection *selection = gtk_tree_view_get_selection(data->tree_view);
+	GList *selected_rows = gtk_tree_selection_get_selected_rows(selection,NULL);
+
+	if(selected_rows){
+		int i = gtk_tree_path_get_indices((GtkTreePath *)selected_rows->data)[0];
+		DB_playItem_t *item = deadbeef->playqueue_get_item(i);
+		if(item){
+			deadbeef->playqueue_remove_nth(i);
+			deadbeef->playqueue_insert_at(0,item);
+			deadbeef->pl_item_unref(item);
+			deadbeef->sendmessage(DB_EV_NEXT,0,0,0);
+		}
+		g_list_free_full(selected_rows,(GDestroyNotify)gtk_tree_path_free);
+	}
 }
 
 static gboolean on_row_button_press(GtkWidget *widget,GdkEventButton *event,struct queueview *data){
 	if(event->button == GDK_BUTTON_SECONDARY){
 		GtkTreePath *path = NULL;
+		gboolean multi = gtk_tree_selection_count_selected_rows(gtk_tree_view_get_selection(data->tree_view)) > 1;
 
 		if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(widget),(gint)event->x,(gint)event->y,&path,NULL,NULL,NULL)){
 			GtkWidget *menu = gtk_menu_new();
@@ -260,16 +301,22 @@ static gboolean on_row_button_press(GtkWidget *widget,GdkEventButton *event,stru
 					g_signal_connect_swapped(item,"activate",G_CALLBACK(remove_selected_rows),data);
 				gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
 
+				item = gtk_menu_item_new_with_label("Play Now");
+					g_signal_connect_swapped(item,"activate",G_CALLBACK(play_selected_row),data);
+				gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
+
 				item = gtk_menu_item_new_with_label("Jump to");
+					gtk_widget_set_sensitive(item,!multi);
+					g_signal_connect_swapped(item,"activate",G_CALLBACK(jump_to_selected_row),data);
 				gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
 
 				gtk_widget_show_all(menu);
 			gtk_menu_popup_at_pointer(GTK_MENU(menu),(GdkEvent*)event);
 			gtk_tree_path_free(path);
 		}
-		return FALSE;
+		return multi;
 	}else if(event->button == GDK_BUTTON_PRIMARY && event->type == GDK_2BUTTON_PRESS){
-		on_row_activate();
+		play_selected_row(data);
 		return TRUE;
 	}
 	return FALSE;
@@ -281,7 +328,7 @@ static gboolean on_key_press(__attribute__((unused)) GtkWidget *widget,GdkEventK
 			remove_selected_rows(data);
 			return TRUE;
 		case GDK_KEY_Return:
-			on_row_activate();
+			play_selected_row(data);
 			return TRUE;
 	}
 	return FALSE;
@@ -324,7 +371,7 @@ static void queueview_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const 
 					data->columns[j].title[k] = '\0';
 					goto End;
 				default:
-					data->columns[j].title[k++] = *c;
+					if(k < TITLE_LEN) data->columns[j].title[k++] = *c;
 					break;
 			} c+= 1;}
 		}else if(strcmp(keyvalues[i],"format") == 0){
@@ -346,7 +393,7 @@ static void queueview_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const 
 					data->columns[j].tf = deadbeef->tf_compile(data->columns[j].format);
 					goto End;
 				default:
-					data->columns[j].format[k++] = *c;
+					if(k < FORMAT_LEN) data->columns[j].format[k++] = *c;
 					break;
 			} c+= 1;}
 		}else if(strcmp(keyvalues[i],"width") == 0){
@@ -448,10 +495,10 @@ ddb_gtkui_widget_t *queueview_create(){
 	strcpy(w->columns[0].format,"%title%");
 	w->columns[0].tf = deadbeef->tf_compile(w->columns[0].format);
 
-    gtk_tree_view_set_reorderable(w->tree_view,TRUE);
-    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(w->tree_view),GTK_SELECTION_MULTIPLE);
-    g_signal_connect(GTK_WIDGET(w->tree_view),"button-press-event",G_CALLBACK(on_row_button_press),w);
-    g_signal_connect(GTK_WIDGET(w->tree_view),"key-press-event",G_CALLBACK(on_key_press),w);
+	gtk_tree_view_set_reorderable(w->tree_view,TRUE);
+	gtk_tree_selection_set_mode(gtk_tree_view_get_selection(w->tree_view),GTK_SELECTION_MULTIPLE);
+	g_signal_connect(GTK_WIDGET(w->tree_view),"button-press-event",G_CALLBACK(on_row_button_press),w);
+	g_signal_connect(GTK_WIDGET(w->tree_view),"key-press-event",G_CALLBACK(on_key_press),w);
 	gtk_widget_show(GTK_WIDGET(w->tree_view));
 	gtk_container_add(GTK_CONTAINER(w->base.widget),GTK_WIDGET(w->tree_view));
 
