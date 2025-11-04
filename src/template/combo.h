@@ -61,6 +61,8 @@ static void w_on_combo_change(GtkComboBox* self,gpointer user_data){
 	    g_signal_handlers_block_matched(self,mask,0,0,NULL,w_on_combo_change,data);
 	    gtk_combo_box_set_active(self,-1);
 	    g_signal_handlers_unblock_matched(self,mask,0,0,NULL,w_on_combo_change,data);
+	}else{
+		gtk_widget_set_tooltip_text(data->base.widget,gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(data->base.widget)));
 	}
 }
 
@@ -74,6 +76,9 @@ static void w_rebuild_combo(struct STRUCT_NAME *data){
 		g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)w_on_combo_change,data);
 		gtk_combo_box_set_active(GTK_COMBO_BOX(data->base.widget),selected);
 		g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)w_on_combo_change,data);
+
+		gtk_widget_set_tooltip_text(data->base.widget,gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(data->base.widget)));
+
 		gtk_widget_set_sensitive(data->base.widget,true);
 	}else{
 		gtk_widget_set_sensitive(data->base.widget,false);
@@ -93,6 +98,8 @@ static int w_on_change(gpointer user_data){
 			g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)w_on_combo_change,data);
 			gtk_combo_box_set_active(GTK_COMBO_BOX(data->base.widget),pos);
 			g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)w_on_combo_change,data);
+
+			gtk_widget_set_tooltip_text(data->base.widget,label);
 		}else{
 			//Label not found in combo box. Rebuild/rescan the combo box. Maybe there is a new one.
 			w_rebuild_combo(data);
