@@ -25,10 +25,9 @@ struct playbackbuttonsalt{
 	ddb_gtkui_widget_t base;
 	GtkWidget *buttons[BUTTON_COUNT];
 	guint callback_id;
+	GtkWidget *play_image;
+	GtkWidget *pause_image;
 };
-
-#define PLAY_IMAGE_NEW  gtk_image_new_from_icon_name("media-playback-start-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR)
-#define PAUSE_IMAGE_NEW gtk_image_new_from_icon_name("media-playback-pause-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR)
 
 static gboolean playbackbuttonsalt_on_play(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
@@ -36,7 +35,7 @@ static gboolean playbackbuttonsalt_on_play(gpointer user_data){
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],true);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],true);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_PREV],true);
-	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PAUSE_IMAGE_NEW);
+	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->pause_image);
 	return G_SOURCE_REMOVE;
 }
 static gboolean playbackbuttonsalt_on_stop(gpointer user_data){
@@ -45,12 +44,12 @@ static gboolean playbackbuttonsalt_on_stop(gpointer user_data){
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],false);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],!!deadbeef->playqueue_get_count());
 	gtk_widget_set_sensitive(data->buttons[BUTTON_PREV],false);
-	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PLAY_IMAGE_NEW);
+	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->play_image);
 	return G_SOURCE_REMOVE;
 }
 static gboolean playbackbuttonsalt_on_unpause(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
-	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PAUSE_IMAGE_NEW);
+	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->pause_image);
 	return G_SOURCE_REMOVE;
 }
 static gboolean playbackbuttonsalt_on_queue(gpointer user_data){
@@ -63,7 +62,7 @@ static gboolean playbackbuttonsalt_on_queue(gpointer user_data){
 }
 static gboolean playbackbuttonsalt_on_pause(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
-	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),PLAY_IMAGE_NEW);
+	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->play_image);
 	return G_SOURCE_REMOVE;
 }
 static void playbackbuttonsalt_on_callback_end(void *user_data){
@@ -145,12 +144,25 @@ static int playbackbuttonsalt_message(struct ddb_gtkui_widget_s *w,uint32_t id,_
 		}
 #endif
 
+void playbackbuttonsalt_destroy(struct ddb_gtkui_widget_s *w){
+	struct playbackbuttonsalt *data = (struct playbackbuttonsalt*)w;
+	g_object_unref(G_OBJECT(data->play_image));
+	g_object_unref(G_OBJECT(data->pause_image));
+}
+
 ddb_gtkui_widget_t *playbackbuttonsalt_create(){
 	struct playbackbuttonsalt *w = calloc(1,sizeof(struct playbackbuttonsalt));
 	w->base.widget = gtk_hbutton_box_new();
 	w->base.init    = playbackbuttonsalt_init;
+	w->base.destroy = playbackbuttonsalt_destroy;
 	w->base.message = playbackbuttonsalt_message;
 	w->callback_id = 0;
+	w->play_image  = gtk_image_new_from_icon_name("media-playback-start-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR);
+	w->pause_image = gtk_image_new_from_icon_name("media-playback-pause-symbolic",GTK_ICON_SIZE_SMALL_TOOLBAR);
+
+	//Increase ref count due to the handling of set_image.
+	g_object_ref(G_OBJECT(w->play_image));
+	g_object_ref(G_OBJECT(w->pause_image));
 
 	#if GTK_CHECK_VERSION(3,0,0)
 	gtk_widget_insert_action_group(GTK_WIDGET(w->base.widget),"db",altwidgets_data.db_action_group);
@@ -165,7 +177,7 @@ ddb_gtkui_widget_t *playbackbuttonsalt_create(){
 
 		#define button w->buttons[BUTTON_PLAYPAUSE]
 		button = gtk_button_new();
-			gtk_button_set_image(GTK_BUTTON(button),PLAY_IMAGE_NEW);
+			gtk_button_set_image(GTK_BUTTON(button),w->play_image);
 			BUTTON_ACTION_INIT(button,"play_pause");
 			gtk_widget_show(button);
 		gtk_box_pack_start(GTK_BOX(w->base.widget),button,false,false,0);

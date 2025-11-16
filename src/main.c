@@ -91,9 +91,6 @@ static int altwidgets_connect(){
 	//Multiple views should be able to connect to a single view controller.
 	//The view selector cannot have a pointer to a widget in case it is destroyed (no ref counting for widgets?), so store the widget as a "path" from a root widget. Example: root -> child 0: hbox -> child 3: vbox -> child 2: view container.
 	//The view selector and container is paired by the container having an "id". The selector searches from a root widget for a view container which has the specified "id". The "id" should be an user inputted string in both the selector and the container.
-	//It would therefore be beneficial in this approach to extend the GTKUI API, making it possible to register multiple root widgets, meaning returning a NULL-terminated array in w_get_rootwidget for example.
-	//An alternative would be to use the pointer approach and extend the GTKUI API to be able to listen to widget creations/removals.
-	//If it is not possible to extend the GTKUI API, a plugin could provide API extensions instead. For example a plugin that provides a list of root widgets which every plugin can register into.
 
 	return 0;
 }
@@ -129,6 +126,10 @@ static int altwidgets_message(uint32_t id,__attribute__((unused)) uintptr_t ctx,
 	return 0;
 }
 
+static const char altwidgets_description[] = {
+#embed "../README"
+,'\0'};
+
 static const char altwidgets_license[] = {
 #embed "../LICENSE"
 ,'\0'};
@@ -145,65 +146,7 @@ static DB_misc_t plugin ={
 	.plugin.id = "altwidgets-gtk2",
 	#endif
 	.plugin.name = "Alternative Widgets",
-	.plugin.descr =
-		"Alternative small widgets.\n"
-		"\n"
-		"List of widgets provided:\n"
-		"\n"
-		"- Playback Buttons (Alt):\n"
-		"Playback buttons and more with tooltips and state.\n"
-		"Buttons will be disabled depending on the state that the button controls.\n"
-		"This widget is unfortunately not configurable as of writing.\n"
-		"\n"
-		"- Volume Scale:\n"
-		"Volume selector by a scale widget.\n"
-		"Right-click to select either a linear, cubic or dB scale,\n"
-		"similar to the official volume widget.\n"
-		"Configuration keys: scale: str, step1: float, step2: float, width: int, height: int.\n"
-		"\n"
-		"- DSP Combo:\n"
-		"Selecting a saved DSP preset.\n"
-		"Configuration keys: maxwidth: int.\n"
-		"\n"
-		"- Menu Toggle Button:\n"
-		"Toggles the visibility of the menu bar.\n"
-		"\n"
-		"- Button (Alt):\n"
-		"Provides a button using an icon based on gtk_image_new_from_icon_name.\n"
-		"gtk-icon-browser usually provides a way to see a list of icons together with their name,\n"
-		"but a GTK theme can also provide additional ones.\n"
-		"The label allows for title formatting and will update depending on deadbeef message event IDs if specified.\n"
-		"See deadbeef.h:DB_EV_* for a list of them.\n"
-		"The action is identified by the deadbeef action names.\n"
-		"A list of the default deadbeef actions can be found in deadbeef/src/coreplugin.c:action_*\n"
-		"Plugins are also able to provide additional actions.\n"
-		"deadbeef.h:DB_plugin_action_t::name is what to look for.\n"
-		"Configuration keys: action: str, iconname: str, label: str, eventupdate0: uint, eventupdate1: uint, eventupdate2: uint.\n"
-		"\n"
-		"- Title Formatting Tester:\n"
-		"Displays the title formatted string based on track selection.\n"
-		"Useful for testing and formatting track metadata.\n"
-		"Configuration keys: input: str.\n"
-		"\n"
-		"- Queue View:\n"
-		"Displays a list of play items that currently are in the play queue.\n"
-		"Play items in the queue can be removed by either Right-click > Unqueue\n"
-		"or by selecting and pressing the Delete key.\n"
-		"It is currently very bare-bones and lack a lot of other useful features.\n"
-		"Configuration keys: title: list[str], format: list[str], width: list[uint].\n"
-		"\n"
-		"- Output Plugin Combo:\n"
-		"Selecting an output plugin.\n"
-		"Configuration keys: maxwidth: int.\n"
-		"\n"
-		"- Output Device Combo:\n"
-		"Selecting an output device of the output plugin.\n"
-		"Configuration keys: maxwidth: int.\n"
-		"\n"
-		"- Popover Toggle (GTK3):\n"
-		"A button which displays a popover containing a widget when pressed.\n"
-		"Configuration keys: width: int, height: int, iconname: str, label: str, tooltip: str, padding: uint.\n"
-	,
+	.plugin.descr = altwidgets_description,
 	.plugin.website = "https://github.org/EDT4/ddb_altwidgets",
 	.plugin.copyright = altwidgets_license,
 	.plugin.connect    = altwidgets_connect,
