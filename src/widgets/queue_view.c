@@ -427,44 +427,28 @@ static const char **queueview_serialize_to_keyvalues(ddb_gtkui_widget_t *base){
 	if(data->column_count){ //TODO: Change this to just numbered?
 		kv[e++] = "title";
 		{
-			char *v = malloc(data->column_count * (1+TITLE_LEN));
-			kv[e++] = v;
-			int c = 0;
-			Loop1:
-			for(char *i = data->columns[c].title; *i; i+=1){if(*v != ';') *(v++) = *i;}
-			if(++c < data->column_count){ //Loop or end.
-				*(v++) = ';';
-				goto Loop1;
-			}else{
-				*v = '\0';
+			char *v; kv[e++] = v = malloc(data->column_count * (1+TITLE_LEN));
+			for(int c=0;;){
+				for(char *i = data->columns[c].title; *i; i+=1){if(*v != ';') *(v++) = *i;}
+				if(++c < data->column_count) *v++ = ';'; else{*v = '\0'; break;}
 			}
 		}
 
 		kv[e++] = "format";
 		{
-			char *v = malloc(data->column_count * (1+FORMAT_LEN));
-			kv[e++] = v;
-			int c = 0;
-			Loop2:
-			for(char *i = data->columns[c].format; *i; i+=1){if(*v != ';') *(v++) = *i;}
-			if(++c < data->column_count){ //Loop or end.
-				*(v++) = ';';
-				goto Loop2;
-			}else{
-				*v = '\0';
+			char *v; kv[e++] = v = malloc(data->column_count * (1+FORMAT_LEN));
+			for(int c=0;;){
+				for(char *i = data->columns[c].format; *i; i+=1){if(*v != ';') *(v++) = *i;}
+				if(++c < data->column_count) *v++ = ';'; else{*v = '\0'; break;}
 			}
 		}
 
 		kv[e++] = "width";
 		{
-			char *v = malloc(data->column_count * (1+INT_BUFFER_LEN));
-			kv[e++] = v;
-			int c = 0;
-			Loop3:
-			v+= snprintf(v,INT_BUFFER_LEN,"%u",data->columns[c].width);
-			if(++c < data->column_count){ //Loop or end.
-				*(v++) = ';';
-				goto Loop3;
+			char *v; kv[e++] = v = malloc(data->column_count * (1+INT_BUFFER_LEN));
+			for(int c=0;;){
+				v+= snprintf(v,INT_BUFFER_LEN,"%u",data->columns[c].width);
+				if(++c < data->column_count) *v++ = ';'; else break;
 			}
 		}
 	}
