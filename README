@@ -18,20 +18,17 @@ Configuration keys: scale: str, step1: float, step2: float, width: int, height: 
 Selecting a saved DSP preset.
 Configuration keys: maxwidth: int.
 
-- Menu Toggle Button:
-Toggles the visibility of the menu bar.
-
 - Button (Alt):
 Provides a button using an icon based on gtk_image_new_from_icon_name.
-gtk-icon-browser usually provides a way to see a list of icons together with their name,
-but a GTK theme can also provide additional ones.
-The label allows for title formatting and will update depending on deadbeef message event IDs if specified.
-See deadbeef.h:DB_EV_* for a list of them.
+gtk-icon-browser usually provides a way to see a list of icons together with
+their name, but a GTK theme can also provide additional ones.
+The label allows for title formatting and will update depending on deadbeef
+message event IDs if specified. See deadbeef.h:DB_EV_* for a list of them.
 The action is identified by the deadbeef action names.
 A list of the default deadbeef actions can be found in deadbeef/src/coreplugin.c:action_*
 Plugins are also able to provide additional actions.
 deadbeef.h:DB_plugin_action_t::name is what to look for.
-Configuration keys: action: str, iconname: str, label: str, eventupdate0: uint, eventupdate1: uint, eventupdate2: uint.
+Configuration keys: action: str, iconname: str, label: str, eventupdates: list[uint].
 
 - Title Formatting Tester:
 Displays the title formatted string based on track selection.
@@ -56,3 +53,11 @@ Configuration keys: maxwidth: int.
 - Popover Toggle (GTK3):
 A button which displays a popover containing a widget when pressed.
 Configuration keys: width: int, height: int, iconname: str, label: str, tooltip: str, padding: uint.
+
+- Config Toggle Button:
+Provides a toggle button, similar to "Button (Alt)", but also being able to
+switch between two values in the config.
+If action is specified, then the toggle button will execute the action instead
+of modifying the config directly, meaning that it would only read from the
+config to check the toggle state.
+Configuration keys: action: str, iconname0: str, iconname1: str, label0: str, label1: str, tooltip0: str, tooltip1: str, configvalue0: str, configvalue1: str, configkey: str, cssclasses: str.

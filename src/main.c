@@ -8,12 +8,12 @@
 ddb_gtkui_widget_t *playbackbuttonsalt_create();
 ddb_gtkui_widget_t *volumescale_create();
 ddb_gtkui_widget_t *dspcombo_create();
-ddb_gtkui_widget_t *menutoggle_create();
 ddb_gtkui_widget_t *buttonalt_create();
 ddb_gtkui_widget_t *tftester_create();
 ddb_gtkui_widget_t *queueview_create();
 ddb_gtkui_widget_t *outputplugincombo_create();
 ddb_gtkui_widget_t *outputdevicecombo_create();
+ddb_gtkui_widget_t *configkeytoggle_create();
 
 #if GTK_CHECK_VERSION(3,0,0)
 ddb_gtkui_widget_t *popovertoggle_create();
@@ -75,12 +75,12 @@ static int altwidgets_connect(){
 	gtkui_plugin->w_reg_widget("Playback Buttons (Alt)" ,0                           ,playbackbuttonsalt_create,"playbackbuttonsalt",NULL);
 	gtkui_plugin->w_reg_widget("Volume Scale"           ,DDB_WF_SUPPORTS_EXTENDED_API,volumescale_create       ,"volumescale"       ,NULL);
 	gtkui_plugin->w_reg_widget("DSP Combo"              ,DDB_WF_SUPPORTS_EXTENDED_API,dspcombo_create          ,"dspcombo"          ,NULL);
-	gtkui_plugin->w_reg_widget("Menu Toggle Button"     ,0                           ,menutoggle_create        ,"menutoggle"        ,NULL);
 	gtkui_plugin->w_reg_widget("Button (Alt)"           ,DDB_WF_SUPPORTS_EXTENDED_API,buttonalt_create         ,"buttonalt"         ,NULL);
 	gtkui_plugin->w_reg_widget("Title Formatting Tester",DDB_WF_SUPPORTS_EXTENDED_API,tftester_create          ,"tftester"          ,NULL);
 	gtkui_plugin->w_reg_widget("Queue View"             ,DDB_WF_SUPPORTS_EXTENDED_API,queueview_create         ,"queueview"         ,NULL);
 	gtkui_plugin->w_reg_widget("Output Plugin Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputplugincombo_create ,"outputplugincombo" ,NULL);
 	gtkui_plugin->w_reg_widget("Output Device Combo"    ,DDB_WF_SUPPORTS_EXTENDED_API,outputdevicecombo_create ,"outputdevicecombo" ,NULL);
+	gtkui_plugin->w_reg_widget("Config Key Toggle"      ,DDB_WF_SUPPORTS_EXTENDED_API,configkeytoggle_create   ,"configkeytoggle"   ,NULL);
 
 	#if GTK_CHECK_VERSION(3,0,0)
 	gtkui_plugin->w_reg_widget("Popover Toggle",DDB_WF_SUPPORTS_EXTENDED_API,popovertoggle_create,"popovertoggle",NULL);
@@ -101,12 +101,12 @@ static int altwidgets_disconnect(){
 		gtkui_plugin->w_unreg_widget("playbackbuttonsalt");
 		gtkui_plugin->w_unreg_widget("volumescale");
 		gtkui_plugin->w_unreg_widget("dspcombo");
-		gtkui_plugin->w_unreg_widget("menutoggle");
 		gtkui_plugin->w_unreg_widget("buttonalt");
 		gtkui_plugin->w_unreg_widget("tftester");
 		gtkui_plugin->w_unreg_widget("queueview");
 		gtkui_plugin->w_unreg_widget("outputplugincombo");
 		gtkui_plugin->w_unreg_widget("outputdevicecombo");
+		gtkui_plugin->w_unreg_widget("configkeytoggle");
 
 		#if GTK_CHECK_VERSION(3,0,0)
 		gtkui_plugin->w_unreg_widget("popovertoggle");
@@ -138,7 +138,7 @@ static DB_misc_t plugin ={
 	.plugin.api_vmajor = DB_API_VERSION_MAJOR,
 	.plugin.api_vminor = DB_API_VERSION_MINOR,
 	.plugin.version_major = 1,
-	.plugin.version_minor = 14,
+	.plugin.version_minor = 15,
 	.plugin.type = DB_PLUGIN_MISC,
 	#if GTK_CHECK_VERSION(3,0,0)
 	.plugin.id = "altwidgets-gtk3",
