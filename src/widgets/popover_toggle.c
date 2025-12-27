@@ -25,25 +25,25 @@ struct popovertoggle{
 	unsigned int padding;
 };
 
-static void on_popover_closed(__attribute__((unused)) GtkPopover* self,gpointer user_data){
+static void g_on_popover_closed(__attribute__((unused)) GtkPopover* self,gpointer user_data){
 	struct popovertoggle *data = (struct popovertoggle*)user_data;
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->base.widget),FALSE);
 }
 
-static void popovertoggle_on_toggled(GtkToggleButton *widget,gpointer user_data){
+static void g_on_button_toggled(GtkToggleButton *widget,gpointer user_data){
 	struct popovertoggle *data = (struct popovertoggle*)user_data;
 	if(gtk_toggle_button_get_active(widget)){
 		gtk_popover_popup(GTK_POPOVER(data->popover));
 	}
 }
 
-static void popovertoggle_append(ddb_gtkui_widget_t *w,ddb_gtkui_widget_t *child){
+static void popovertoggle_g_append(ddb_gtkui_widget_t *w,ddb_gtkui_widget_t *child){
 	struct popovertoggle *data = (struct popovertoggle*)w;
 	gtk_container_add(GTK_CONTAINER(data->popover),child->widget);
 	gtk_widget_show(child->widget);
 }
 
-static void popovertoggle_remove(ddb_gtkui_widget_t *w,ddb_gtkui_widget_t *child){
+static void popovertoggle_g_remove(ddb_gtkui_widget_t *w,ddb_gtkui_widget_t *child){
 	struct popovertoggle *data = (struct popovertoggle*)w;
 	gtk_container_remove(GTK_CONTAINER(data->popover),child->widget);
 }
@@ -107,7 +107,7 @@ static void popovertoggle_free_serialized_keyvalues(__attribute__((unused)) ddb_
 	free(keyvalues);
 }
 
-static void popovertoggle_init(ddb_gtkui_widget_t *w){
+static void popovertoggle_g_init(ddb_gtkui_widget_t *w){
 	struct popovertoggle *data = (struct popovertoggle*)w;
 	if(data->icon_name[0]) gtk_button_set_image(GTK_BUTTON(data->base.widget),gtk_image_new_from_icon_name(data->icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
 	if(data->label[0])     gtk_button_set_label(GTK_BUTTON(data->base.widget),data->label);
@@ -119,9 +119,9 @@ static void popovertoggle_init(ddb_gtkui_widget_t *w){
 ddb_gtkui_widget_t *popovertoggle_create(){
 	struct popovertoggle *w = calloc(1,sizeof(struct popovertoggle));
 	w->base.widget = gtk_toggle_button_new();
-	w->base.init   = popovertoggle_init;
-	w->base.append = popovertoggle_append;
-	w->base.remove = popovertoggle_remove;
+	w->base.init   = popovertoggle_g_init;
+	w->base.append = popovertoggle_g_append;
+	w->base.remove = popovertoggle_g_remove;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
 	w->exapi.deserialize_from_keyvalues = popovertoggle_deserialize_from_keyvalues;
 	w->exapi.serialize_to_keyvalues     = popovertoggle_serialize_to_keyvalues;
@@ -133,12 +133,12 @@ ddb_gtkui_widget_t *popovertoggle_create(){
 	w->height = -1;
 	w->padding = 0;
 
-	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(popovertoggle_on_toggled),w);
+	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(g_on_button_toggled),w);
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
 
 	w->popover = gtk_popover_new(w->base.widget);
-	g_signal_connect(GTK_POPOVER(w->popover),"closed",G_CALLBACK(on_popover_closed),w);
+	g_signal_connect(GTK_POPOVER(w->popover),"closed",G_CALLBACK(g_on_popover_closed),w);
 
 	ddb_gtkui_widget_t *ph = gtkui_plugin->w_create("placeholder");
 	gtkui_plugin->w_append(&w->base,ph);

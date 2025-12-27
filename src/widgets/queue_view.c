@@ -1,3 +1,4 @@
+//TODO: GTK functions on GTK thread
 //TODO: Drag and drop from playlist. See deadbeef/plugins/gtkui/playlist/ddblistview.c:ddb_listview_list_drag_data_received
 //TODO: Jump to item menu. Requires saving item
 //TODO: Save column width
@@ -346,7 +347,7 @@ static void queueview_on_callback_end(void *user_data){
 static void queueview_init(ddb_gtkui_widget_t *w){
 	struct queueview *data = (struct queueview*)w;
 	model_init(data);
-	data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(model_update),data,queueview_on_callback_end);
+	model_update(data);
 }
 
 static int queueview_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,uint32_t p1,__attribute__((unused)) uint32_t p2){

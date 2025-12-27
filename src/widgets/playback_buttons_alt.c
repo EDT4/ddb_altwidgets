@@ -29,7 +29,7 @@ struct playbackbuttonsalt{
 	GtkWidget *pause_image;
 };
 
-static gboolean playbackbuttonsalt_on_play(gpointer user_data){
+static gboolean g_on_play(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
 	gtk_widget_set_sensitive(data->buttons[BUTTON_JUMP_TO_CURRENT],true);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],true);
@@ -38,7 +38,7 @@ static gboolean playbackbuttonsalt_on_play(gpointer user_data){
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->pause_image);
 	return G_SOURCE_REMOVE;
 }
-static gboolean playbackbuttonsalt_on_stop(gpointer user_data){
+static gboolean g_on_stop(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
 	gtk_widget_set_sensitive(data->buttons[BUTTON_JUMP_TO_CURRENT],false);
 	gtk_widget_set_sensitive(data->buttons[BUTTON_STOP],false);
@@ -47,12 +47,12 @@ static gboolean playbackbuttonsalt_on_stop(gpointer user_data){
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->play_image);
 	return G_SOURCE_REMOVE;
 }
-static gboolean playbackbuttonsalt_on_unpause(gpointer user_data){
+static gboolean g_on_unpause(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->pause_image);
 	return G_SOURCE_REMOVE;
 }
-static gboolean playbackbuttonsalt_on_queue(gpointer user_data){
+static gboolean g_on_queue(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
 	bool b = !!deadbeef->playqueue_get_count();
 	struct DB_output_s* output = deadbeef->get_output();
@@ -60,12 +60,12 @@ static gboolean playbackbuttonsalt_on_queue(gpointer user_data){
 	gtk_widget_set_sensitive(data->buttons[BUTTON_NEXT],b);
 	return G_SOURCE_REMOVE;
 }
-static gboolean playbackbuttonsalt_on_pause(gpointer user_data){
+static gboolean g_on_pause(gpointer user_data){
 	struct playbackbuttonsalt *data = user_data;
 	gtk_button_set_image(GTK_BUTTON(data->buttons[BUTTON_PLAYPAUSE]),data->play_image);
 	return G_SOURCE_REMOVE;
 }
-static void playbackbuttonsalt_on_callback_end(void *user_data){
+static void g_on_callback_end(void *user_data){
 	struct playbackbuttonsalt *data = user_data;
 	data->callback_id = 0;
 }
@@ -79,15 +79,15 @@ static void playbackbuttonsalt_init(ddb_gtkui_widget_t *w){
 		switch(output->state()){
 			case DDB_PLAYBACK_STATE_STOPPED:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_stop,data,playbackbuttonsalt_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_stop,data,g_on_callback_end);
 				break;
 			case DDB_PLAYBACK_STATE_PLAYING:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_play,data,playbackbuttonsalt_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_play,data,g_on_callback_end);
 				break;
 			case DDB_PLAYBACK_STATE_PAUSED:
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_pause,data,playbackbuttonsalt_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_pause,data,g_on_callback_end);
 				break;
 		}
 	}
@@ -99,21 +99,21 @@ static int playbackbuttonsalt_message(struct ddb_gtkui_widget_s *w,uint32_t id,_
 	switch(id){
 		case DB_EV_SONGFINISHED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_stop,data,playbackbuttonsalt_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_stop,data,g_on_callback_end);
 			break;
 		case DB_EV_SONGSTARTED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_play,data,playbackbuttonsalt_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_play,data,g_on_callback_end);
 			break;
 		case DB_EV_PAUSED:
 			if(data->callback_id != 0) g_source_remove(data->callback_id);
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,p1? playbackbuttonsalt_on_pause : playbackbuttonsalt_on_unpause,data,playbackbuttonsalt_on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,p1? g_on_pause : g_on_unpause,data,g_on_callback_end);
 			break;
 		case DB_EV_TRACKINFOCHANGED:
 		case DB_EV_PLAYLISTCHANGED:
 			if(p1 == DDB_PLAYLIST_CHANGE_PLAYQUEUE){
 				if(data->callback_id != 0) g_source_remove(data->callback_id);
-				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,playbackbuttonsalt_on_queue,data,playbackbuttonsalt_on_callback_end);
+				data->callback_id = g_idle_add_full(G_PRIORITY_LOW,g_on_queue,data,g_on_callback_end);
 			}
 			break;
 	}

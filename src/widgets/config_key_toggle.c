@@ -32,10 +32,17 @@ struct configkeytoggle{
 	char css_classes[256];
 };
 
-static void configkeytoggle_init(ddb_gtkui_widget_t *w){
+static void configkeytoggle_g_destroy(ddb_gtkui_widget_t *w){
 	struct configkeytoggle *data = (struct configkeytoggle*)w;
-	struct togglestatedata *state = &data->state[gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(data->base.widget))];
+	for(size_t i=0; i<sizeof(data->state)/sizeof(data->state[0]); i+=1){
+		if(data->state[i].icon_name[0] && data->state[i].icon_image){
+			g_object_unref(G_OBJECT(data->state[i].icon_image));
+			data->state[i].icon_image = NULL;
+		}
+	}
+}
 
+static void configkeytoggle_g_update_state(struct configkeytoggle *data,struct togglestatedata *state){
 	if(state->icon_image) gtk_button_set_image(GTK_BUTTON(data->base.widget),GTK_WIDGET(state->icon_image));
 
 	if(state->label[0])   gtk_button_set_label(GTK_BUTTON(data->base.widget),state->label);
@@ -44,7 +51,27 @@ static void configkeytoggle_init(ddb_gtkui_widget_t *w){
 	else if(data->action) gtk_widget_set_tooltip_text(data->base.widget,data->action->title);
 }
 
-static void on_toggled(GtkToggleButton *widget,struct configkeytoggle *data){
+static void configkeytoggle_g_init(ddb_gtkui_widget_t *w){
+	struct configkeytoggle *data = (struct configkeytoggle*)w;
+
+	for(size_t i=0; i<sizeof(data->state)/sizeof(data->state[0]); i+=1){
+		if(data->state[i].icon_name[0] && !data->state[i].icon_image){
+			//if(data->state[i].icon_image) g_object_unref(G_OBJECT(data->state[i].icon_image));
+			data->state[i].icon_image = GTK_IMAGE(gtk_image_new_from_icon_name(data->state[i].icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
+			g_object_ref(G_OBJECT(data->state[i].icon_image)); //Increase ref count due to the handling of set_image.
+		}
+	}
+
+	#if GTK_CHECK_VERSION(3,0,0)
+	if(data->css_classes[0]){
+		gtk_style_context_add_class(gtk_widget_get_style_context(data->base.widget),data->css_classes);
+	}
+	#endif
+
+	configkeytoggle_g_update_state(data,&data->state[gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(data->base.widget))]);
+}
+
+static void g_on_toggled(GtkToggleButton *widget,struct configkeytoggle *data){
 	if(data->action){
 		action_call(data->action,DDB_ACTION_CTX_MAIN);
 		return;
@@ -56,7 +83,7 @@ static void on_toggled(GtkToggleButton *widget,struct configkeytoggle *data){
 		deadbeef->sendmessage(DB_EV_CONFIGCHANGED,0,0,0);
 	}
 
-	configkeytoggle_init(&data->base);
+	configkeytoggle_g_update_state(data,state);
 }
 
 static void configkeytoggle_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,const char **keyvalues){
@@ -66,18 +93,8 @@ static void configkeytoggle_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,
 			data->action = g_hash_table_lookup(altwidgets_data.db_action_map,keyvalues[i+1]);
 		}else if(strcmp(keyvalues[i],"iconname0") == 0){
 			strlcpy(data->state[0].icon_name,keyvalues[i+1],sizeof(data->state[0].icon_name));
-			if(data->state[0].icon_name[0]){
-				if(data->state[0].icon_image) g_object_unref(G_OBJECT(data->state[0].icon_image));
-				data->state[0].icon_image = GTK_IMAGE(gtk_image_new_from_icon_name(data->state[0].icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
-				g_object_ref(G_OBJECT(data->state[0].icon_image)); //Increase ref count due to the handling of set_image.
-			}
 		}else if(strcmp(keyvalues[i],"iconname1") == 0){
 			strlcpy(data->state[1].icon_name,keyvalues[i+1],sizeof(data->state[1].icon_name));
-			if(data->state[1].icon_name[0]){
-				if(data->state[1].icon_image) g_object_unref(G_OBJECT(data->state[1].icon_image));
-				data->state[1].icon_image = GTK_IMAGE(gtk_image_new_from_icon_name(data->state[1].icon_name,GTK_ICON_SIZE_SMALL_TOOLBAR));
-				g_object_ref(G_OBJECT(data->state[1].icon_image)); //Increase ref count due to the handling of set_image.
-			}
 		}else if(strcmp(keyvalues[i],"label0") == 0){
 			strlcpy(data->state[0].label,keyvalues[i+1],sizeof(data->state[0].label));
 		}else if(strcmp(keyvalues[i],"label1") == 0){
@@ -94,12 +111,6 @@ static void configkeytoggle_deserialize_from_keyvalues(ddb_gtkui_widget_t *base,
 			strlcpy(data->config_key,keyvalues[i+1],sizeof(data->config_key));
 		}else if(strcmp(keyvalues[i],"cssclasses") == 0){
 			strlcpy(data->css_classes,keyvalues[i+1],sizeof(data->css_classes));
-
-			#if GTK_CHECK_VERSION(3,0,0)
-			if(data->css_classes[0]){
-				gtk_style_context_add_class(gtk_widget_get_style_context(data->base.widget),data->css_classes);
-			}
-			#endif
 		}
 	}
 }
@@ -172,7 +183,7 @@ static void configkeytoggle_free_serialized_keyvalues(__attribute__((unused)) dd
 	free(keyvalues);
 }
 
-static gboolean on_config_load(struct configkeytoggle *data){
+static gboolean g_on_config_load(struct configkeytoggle *data){
 	if(data->config_key[0]){
 		deadbeef->conf_lock();
 		const char *value = deadbeef->conf_get_str_fast(data->config_key,NULL);
@@ -180,16 +191,16 @@ static gboolean on_config_load(struct configkeytoggle *data){
 			if(data->state[0].config_value[0] && strcmp(value,data->state[0].config_value) == 0){
 				if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(data->base.widget))){
 					const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
-					g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,on_toggled,data);
+					g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,g_on_toggled,data);
 					gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->base.widget),false);
-					g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,on_toggled,data);
+					g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,g_on_toggled,data);
 				}
 			}else if(data->state[1].config_value[0] && strcmp(value,data->state[1].config_value) == 0){
 				if(!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(data->base.widget))){
 					const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
-					g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,on_toggled,data);
+					g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,g_on_toggled,data);
 					gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(data->base.widget),true);
-					g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,on_toggled,data);
+					g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,g_on_toggled,data);
 				}
 			}
 		}
@@ -198,12 +209,12 @@ static gboolean on_config_load(struct configkeytoggle *data){
 	return G_SOURCE_REMOVE;
 }
 
-static void on_config_load_callback_end(struct configkeytoggle *data){
+static void g_on_config_load_callback_end(struct configkeytoggle *data){
 	data->on_config_load_callback_id = 0;
 }
 static void call_config_load(struct configkeytoggle *data){
 	if(data->on_config_load_callback_id == 0){
-		data->on_config_load_callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(on_config_load),data,(GDestroyNotify)on_config_load_callback_end);
+		data->on_config_load_callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(g_on_config_load),data,(GDestroyNotify)g_on_config_load_callback_end);
 	}
 }
 
@@ -220,14 +231,15 @@ static int configkeytoggle_message(struct ddb_gtkui_widget_s *w,uint32_t id,__at
 ddb_gtkui_widget_t *configkeytoggle_create(){
 	struct configkeytoggle *w = calloc(1,sizeof(struct configkeytoggle));
 	w->base.widget  = gtk_toggle_button_new();
-	w->base.init    = configkeytoggle_init;
+	w->base.init    = configkeytoggle_g_init;
+	w->base.destroy = configkeytoggle_g_destroy;
 	w->base.message = configkeytoggle_message;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
 	w->exapi.deserialize_from_keyvalues = configkeytoggle_deserialize_from_keyvalues;
 	w->exapi.serialize_to_keyvalues     = configkeytoggle_serialize_to_keyvalues;
 	w->exapi.free_serialized_keyvalues  = configkeytoggle_free_serialized_keyvalues;
 
-	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(on_toggled),w);
+	g_signal_connect(w->base.widget,"toggled",G_CALLBACK(g_on_toggled),w);
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
 	call_config_load(w);

@@ -26,7 +26,7 @@ struct volumescale{
 };
 #define SCALING_COUNT 3
 
-static void on_volumescale_change(GtkRange* self,__attribute__((unused)) gpointer user_data){
+static void g_on_volumescale_change(GtkRange* self,__attribute__((unused)) gpointer user_data){
 	struct volumescale *data = (struct volumescale*)user_data;
 	double value = gtk_range_get_value(self);
 	switch(data->options.scaling){
@@ -42,7 +42,7 @@ static void on_volumescale_change(GtkRange* self,__attribute__((unused)) gpointe
 	}
 }
 
-static gboolean volumescale_change(gpointer user_data){
+static gboolean volumescale_g_change(gpointer user_data){
 	struct volumescale *data = (struct volumescale*)user_data;
 	const GSignalMatchType mask = (GSignalMatchType)(G_SIGNAL_MATCH_FUNC);
 	const double amp = deadbeef->volume_get_amp();
@@ -66,23 +66,23 @@ static gboolean volumescale_change(gpointer user_data){
 		gtk_widget_set_tooltip_text(data->base.widget,buffer);
 	}
 
-	g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)on_volumescale_change,data);
+	g_signal_handlers_block_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)g_on_volumescale_change,data);
 	gtk_range_set_value(GTK_RANGE(data->base.widget),value);
-	g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)on_volumescale_change,data);
+	g_signal_handlers_unblock_matched(G_OBJECT(data->base.widget),mask,0,0,NULL,(gpointer)g_on_volumescale_change,data);
 
 	return G_SOURCE_REMOVE;
 }
-static void volumescale_change_on_callback_end(void *user_data){
+static void volumescale_g_change_on_callback_end(void *user_data){
 	struct volumescale *data = (struct volumescale*)user_data;
 	data->volume_change_callback_id = 0;
 }
 
-static void volumescale_init(ddb_gtkui_widget_t *w){
+static void volumescale_g_init(ddb_gtkui_widget_t *w){
 	struct volumescale *data = (struct volumescale*)w;
 	gtk_scale_set_draw_value(GTK_SCALE(data->base.widget),false);
 	gtk_range_set_increments(GTK_RANGE(data->base.widget),data->options.step1,data->options.step2);
 	gtk_widget_set_size_request(data->base.widget,data->options.width,data->options.height);
-	volumescale_change(data);
+	volumescale_g_change(data);
 }
 
 static int volumescale_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute__((unused)) uintptr_t ctx,__attribute__((unused)) uint32_t p1,__attribute__((unused)) uint32_t p2){
@@ -90,20 +90,20 @@ static int volumescale_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attrib
 	switch(id){
 		case DB_EV_VOLUMECHANGED:
 			if(data->volume_change_callback_id == 0){
-				data->volume_change_callback_id = g_idle_add_full(G_PRIORITY_LOW,volumescale_change,data,volumescale_change_on_callback_end);
+				data->volume_change_callback_id = g_idle_add_full(G_PRIORITY_LOW,volumescale_g_change,data,volumescale_g_change_on_callback_end);
 			}
 			break;
 	}
 	return 0;
 }
 
-static void on_volumebar_scale_select(GtkWidget *item,struct ddb_gtkui_widget_s *w){
+static void g_on_volumebar_scale_select(GtkWidget *item,struct ddb_gtkui_widget_s *w){
 	struct volumescale *data = (struct volumescale*)w;
 	data->options.scaling = (size_t)g_object_get_data(G_OBJECT(item),"option");
-	volumescale_change(data);
+	volumescale_g_change(data);
 }
 static const char *volumebar_menuitems[SCALING_COUNT] = {"Linear Scale","Cubic Scale","dB Scale"};
-static gboolean on_volumebar_click(__attribute__((unused)) GtkWidget *widget,GdkEventButton *event,gpointer user_data){
+static gboolean g_on_volumebar_click(__attribute__((unused)) GtkWidget *widget,GdkEventButton *event,gpointer user_data){
 	struct volumescale *data = (struct volumescale*)user_data;
 	if(event->type == GDK_BUTTON_PRESS && event->button == 3){ //Right-click
 		GtkWidget *menu = gtk_menu_new ();
@@ -112,7 +112,7 @@ static gboolean on_volumebar_click(__attribute__((unused)) GtkWidget *widget,Gdk
 			GSList *group = NULL;
 			for(size_t i=0; i<SCALING_COUNT; i+=1){
 				item[i] = gtk_radio_menu_item_new_with_label(group,volumebar_menuitems[i]);
-					g_signal_connect(item[i],"toggled",G_CALLBACK(on_volumebar_scale_select),user_data);
+					g_signal_connect(item[i],"toggled",G_CALLBACK(g_on_volumebar_scale_select),user_data);
 					g_object_set_data(G_OBJECT(item[i]),"option",(gpointer)i);
 					gtk_widget_show(item[i]);
 				gtk_container_add(GTK_CONTAINER(menu),item[i]);
@@ -182,7 +182,7 @@ static void volumescale_free_serialized_keyvalues(__attribute__((unused)) ddb_gt
 ddb_gtkui_widget_t *volumescale_create(){
 	struct volumescale *w = calloc(1,sizeof(struct volumescale));
 	w->base.widget = gtk_hscale_new_with_range(0.0,1.0,0.01);
-	w->base.init    = volumescale_init;
+	w->base.init    = volumescale_g_init;
 	w->base.message = volumescale_message;
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
 	w->exapi.deserialize_from_keyvalues = volumescale_deserialize_from_keyvalues;
@@ -195,8 +195,8 @@ ddb_gtkui_widget_t *volumescale_create(){
 	w->options.width = 100;
 	w->options.height = -1;
 
-    g_signal_connect(w->base.widget,"button_press_event",G_CALLBACK(on_volumebar_click),w);
-	g_signal_connect(w->base.widget,"value-changed",G_CALLBACK(on_volumescale_change),w);
+    g_signal_connect(w->base.widget,"button_press_event",G_CALLBACK(g_on_volumebar_click),w);
+	g_signal_connect(w->base.widget,"value-changed",G_CALLBACK(g_on_volumescale_change),w);
 	gtk_widget_show(w->base.widget);
 	gtkui_plugin->w_override_signals(w->base.widget,w);
 

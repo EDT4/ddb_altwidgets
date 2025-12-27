@@ -1,3 +1,5 @@
+//TODO: GTK functions on GTK thread
+
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
 #include <deadbeef/gtkui_api.h>
@@ -20,11 +22,11 @@ struct tftester{
 	char buffer[2000];
 };
 
-static void on_callback_end(void *user_data){
+static void g_on_callback_end(void *user_data){
 	struct tftester *data = user_data;
 	data->callback_id = 0;
 }
-static bool output_update(struct tftester *data){
+static bool g_output_update(struct tftester *data){
 	gtk_text_buffer_set_text(data->output_buffer,"",0);
 	ddb_playlist_t *plt = deadbeef->plt_get_curr();
 	if(plt){
@@ -51,7 +53,7 @@ static bool output_update(struct tftester *data){
 	return G_SOURCE_REMOVE;
 }
 
-static void on_input_changed(GtkTextBuffer *buffer,gpointer user_data){
+static void g_on_input_changed(GtkTextBuffer *buffer,gpointer user_data){
 	struct tftester *data = (struct tftester*)user_data;
 
 	//Input.
@@ -64,7 +66,7 @@ static void on_input_changed(GtkTextBuffer *buffer,gpointer user_data){
 	data->tf_code = deadbeef->tf_compile(text);
 
 	//Output.
-	output_update(data);
+	g_output_update(data);
 	g_free(text);
 }
 
@@ -72,7 +74,7 @@ static int tftester_message(struct ddb_gtkui_widget_s *w,uint32_t id,__attribute
 	struct tftester *data = (struct tftester*)w;
 	if(id == DB_EV_CURSOR_MOVED || id == DB_EV_PLAYLISTSWITCHED || (id == DB_EV_PLAYLISTCHANGED && p1 == (DDB_PLAYLIST_CHANGE_CONTENT || p1 == DDB_PLAYLIST_CHANGE_SELECTION))){
 		if(data->callback_id == 0){
-			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(output_update),data,on_callback_end);
+			data->callback_id = g_idle_add_full(G_PRIORITY_LOW,G_SOURCE_FUNC(g_output_update),data,g_on_callback_end);
 		}
 	}
 	return 0;
@@ -130,7 +132,7 @@ ddb_gtkui_widget_t *tftester_create(){
 
 		w->input_buffer  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(input_text_view));
 		w->output_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(w->output_text_view));
-		g_signal_connect(w->input_buffer,"changed",G_CALLBACK(on_input_changed),w);
+		g_signal_connect(w->input_buffer,"changed",G_CALLBACK(g_on_input_changed),w);
 
 	w->exapi._size = sizeof(ddb_gtkui_widget_extended_api_t);
 	w->exapi.deserialize_from_keyvalues = tftester_deserialize_from_keyvalues;
